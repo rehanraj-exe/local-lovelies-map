@@ -216,21 +216,23 @@ const Index = () => {
         </div>
       )}
 
-      {/* Category Filter Chips */}
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          {categories.map((category) => (
-            <Badge
-              key={category}
-              variant={selectedCategory === category ? 'default' : 'outline'}
-              className="cursor-pointer whitespace-nowrap px-4 py-2 rounded-full hover:shadow-soft transition-all"
-              onClick={() => setSelectedCategory(category)}
-            >
-              {category}
-            </Badge>
-          ))}
+      {/* Category Filter Chips - Only show in List view */}
+      {viewMode === 'list' && (
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            {categories.map((category) => (
+              <Badge
+                key={category}
+                variant={selectedCategory === category ? 'default' : 'outline'}
+                className="cursor-pointer whitespace-nowrap px-4 py-2 rounded-full hover:shadow-soft transition-all"
+                onClick={() => setSelectedCategory(category)}
+              >
+                {category}
+              </Badge>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Main Content */}
       <div className="container mx-auto px-4 pb-8">

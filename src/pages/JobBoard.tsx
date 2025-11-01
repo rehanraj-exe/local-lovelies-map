@@ -94,9 +94,9 @@ const JobBoard = () => {
     const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       job.shops?.name.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesJobType = jobTypeFilter === 'all' || job.job_type === jobTypeFilter;
+    const matchesJobType = !jobTypeFilter || jobTypeFilter === 'all' || job.job_type === jobTypeFilter;
     
-    const matchesWage = wageFilter === 'all' || (() => {
+    const matchesWage = !wageFilter || wageFilter === 'all' || (() => {
       const wage = job.wage.toLowerCase();
       if (wageFilter === 'low') return wage.includes('300') || wage.includes('5000') || wage.includes('8000');
       if (wageFilter === 'medium') return wage.includes('10000') || wage.includes('15000');
