@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import MapView from '@/components/MapView';
 import ShopQuickView from '@/components/ShopQuickView';
 import TopLocalPicks from '@/components/TopLocalPicks';
@@ -6,10 +7,14 @@ import { mockShops } from '@/lib/mockData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, User, Grid, Map } from 'lucide-react';
+import { Search, User, Grid, Map, Briefcase, Store, LogOut } from 'lucide-react';
 import heroImage from '@/assets/hero-town.jpg';
+import { useAuth } from '@/hooks/useAuth';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   const [selectedShopId, setSelectedShopId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
@@ -78,10 +83,47 @@ const Index = () => {
               </Button>
             </div>
 
-            {/* Profile */}
-            <Button variant="outline" size="icon" className="rounded-full">
-              <User className="w-5 h-5" />
-            </Button>
+            {/* Actions */}
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/jobs')}
+                className="rounded-full"
+              >
+                <Briefcase className="w-4 h-4 mr-2" />
+                Jobs
+              </Button>
+              
+              {user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="icon" className="rounded-full">
+                      <User className="w-5 h-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => navigate('/register-shop')}>
+                      <Store className="w-4 h-4 mr-2" />
+                      Register Shop
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={signOut}>
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => navigate('/auth')}
+                  className="rounded-full"
+                >
+                  Sign In
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>
