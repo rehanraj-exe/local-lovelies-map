@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import GoogleMap from '@/components/GoogleMap';
+import MapView from '@/components/MapView';
 import ShopQuickView from '@/components/ShopQuickView';
 import TopLocalPicks from '@/components/TopLocalPicks';
 import { AIChatAssistant } from '@/components/AIChatAssistant';
@@ -244,11 +244,9 @@ const Index = () => {
 
             {/* Map View */}
             <div className="h-[600px] rounded-2xl overflow-hidden shadow-medium border border-border">
-              <GoogleMap 
+              <MapView 
                 shops={filteredShops} 
-                onShopClick={setSelectedShopId}
-                center={{ lat: 28.6139, lng: 77.2090 }}
-                zoom={13}
+                onShopClick={(shopId) => navigate(`/shop/${shopId}`)}
               />
             </div>
           </div>

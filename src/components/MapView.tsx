@@ -1,7 +1,26 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { mockShops, Shop } from '@/lib/mockData';
+import { MapPin, Navigation } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
+interface Shop {
+  id: string;
+  name: string;
+  category: string;
+  subcategory?: string;
+  latitude: number;
+  longitude: number;
+  rating: number;
+  review_count: number;
+  description?: string;
+  photos?: string[];
+  verified: boolean;
+  open_now: boolean;
+  phone: string;
+  address: string;
+  hours?: any;
+}
 
 // Fix for default marker icons in Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -16,9 +35,11 @@ interface MapViewProps {
   shops?: Shop[];
 }
 
-const MapView = ({ onShopClick, shops = mockShops }: MapViewProps) => {
+const MapView = ({ onShopClick, shops = [] }: MapViewProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
+  const userMarkerRef = useRef<L.Marker | null>(null);
+  const [isNearbyMode, setIsNearbyMode] = useState(false);
 
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
@@ -58,16 +79,17 @@ const MapView = ({ onShopClick, shops = mockShops }: MapViewProps) => {
       });
     };
 
-    // Add markers for shops
+    // Add markers for shops with offers check
     shops.forEach((shop) => {
-      const color = shop.offer
+      const hasOffer = false; // Can be extended later to check offers table
+      const color = hasOffer
         ? 'hsl(142, 71%, 45%)' // Green for deals
         : shop.verified
         ? 'hsl(195, 100%, 47%)' // Blue for verified
         : 'hsl(38, 92%, 50%)'; // Yellow for normal
 
       const marker = L.marker([shop.latitude, shop.longitude], {
-        icon: createCustomIcon(color, !!shop.offer),
+        icon: createCustomIcon(color, hasOffer),
       }).addTo(map);
 
       marker.on('click', () => {
@@ -89,6 +111,52 @@ const MapView = ({ onShopClick, shops = mockShops }: MapViewProps) => {
       }
     };
   }, [onShopClick, shops]);
+
+  const recenterToUserLocation = () => {
+    if (!mapInstanceRef.current) return;
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          const userLocation: [number, number] = [latitude, longitude];
+          
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.setView(userLocation, 15);
+            
+            // Remove old user marker if exists
+            if (userMarkerRef.current) {
+              userMarkerRef.current.remove();
+            }
+            
+            // Add new user marker
+            const userIcon = L.divIcon({
+              className: 'user-location-marker',
+              html: `
+                <div class="relative">
+                  <div class="w-5 h-5 rounded-full bg-primary border-4 border-white shadow-glow animate-pulse-soft"></div>
+                  <div class="absolute inset-0 w-5 h-5 rounded-full bg-primary/30 animate-ping"></div>
+                </div>
+              `,
+              iconSize: [20, 20],
+              iconAnchor: [10, 10],
+            });
+            
+            userMarkerRef.current = L.marker(userLocation, { icon: userIcon }).addTo(mapInstanceRef.current);
+            setIsNearbyMode(true);
+            setTimeout(() => setIsNearbyMode(false), 2000);
+          }
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+          // Fallback to default location
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.setView([12.9716, 77.5946], 14);
+          }
+        }
+      );
+    }
+  };
 
   return (
     <div className="relative w-full h-full">
@@ -113,20 +181,27 @@ const MapView = ({ onShopClick, shops = mockShops }: MapViewProps) => {
         </div>
       </div>
 
-      {/* Center to Location Button */}
+      {/* Recenter Button with glow effect */}
       <button 
-        className="absolute bottom-6 right-6 bg-card p-3 rounded-full shadow-medium border border-border hover:bg-accent transition-colors"
+        className={`absolute top-6 right-6 bg-card p-3 rounded-full shadow-medium border border-border hover:bg-accent transition-all ${isNearbyMode ? 'shadow-glow animate-pulse-soft' : ''}`}
         onClick={() => {
           if (mapInstanceRef.current) {
             mapInstanceRef.current.setView([28.6139, 77.2090], 14);
           }
         }}
       >
-        <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
+        <MapPin className="w-6 h-6 text-primary" />
       </button>
+
+      {/* Explore Nearby Floating Button */}
+      <Button
+        onClick={recenterToUserLocation}
+        className="absolute bottom-6 right-6 rounded-full shadow-glow hover:shadow-xl transition-all animate-bounce-subtle"
+        size="lg"
+      >
+        <Navigation className="w-5 h-5 mr-2" />
+        Explore Nearby
+      </Button>
     </div>
   );
 };
