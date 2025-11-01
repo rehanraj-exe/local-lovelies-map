@@ -113,8 +113,8 @@ const JobBoard = () => {
         const monthlyWage = parseWageToMonthly(job.wage);
         
         if (wageFilter === 'low') return monthlyWage >= 300 && monthlyWage <= 8000;
-        if (wageFilter === 'medium') return monthlyWage > 8000 && monthlyWage <= 15000;
-        if (wageFilter === 'high') return monthlyWage > 15000;
+        if (wageFilter === 'medium') return monthlyWage >= 10000 && monthlyWage <= 20000;
+        if (wageFilter === 'high') return monthlyWage > 20000;
         return true;
       })();
       
@@ -194,8 +194,8 @@ const JobBoard = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Ranges</SelectItem>
-                <SelectItem value="low">₹300-8,000</SelectItem>
-                <SelectItem value="medium">₹10,000-15,000</SelectItem>
+                <SelectItem value="low">₹300 – ₹8,000</SelectItem>
+                <SelectItem value="medium">₹10,000 – ₹20,000</SelectItem>
                 <SelectItem value="high">₹20,000+</SelectItem>
               </SelectContent>
             </Select>
