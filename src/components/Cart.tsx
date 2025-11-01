@@ -92,6 +92,10 @@ export const Cart = () => {
   };
 
   const handleCheckout = () => {
+    if (cartItems.length === 0) {
+      toast({ title: 'Cart is empty', variant: 'destructive' });
+      return;
+    }
     setIsOpen(false);
     navigate('/checkout');
   };
@@ -166,8 +170,8 @@ export const Cart = () => {
                 <span>Total:</span>
                 <span>₹{getTotalPrice().toFixed(2)}</span>
               </div>
-              <Button className="w-full" onClick={handleCheckout}>
-                Proceed to Checkout
+              <Button className="w-full" size="lg" onClick={handleCheckout}>
+                Buy Now - Proceed to Checkout
               </Button>
             </div>
           )}

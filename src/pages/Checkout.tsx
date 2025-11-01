@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
+import { ArrowLeft } from 'lucide-react';
 
 interface CartItem {
   id: string;
@@ -146,7 +147,12 @@ const Checkout = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <h1 className="text-3xl font-bold mb-8">Checkout</h1>
+      <div className="flex items-center gap-4 mb-8">
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        <h1 className="text-3xl font-bold">Checkout</h1>
+      </div>
       
       <div className="grid md:grid-cols-2 gap-8">
         <div>
