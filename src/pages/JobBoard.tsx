@@ -91,29 +91,35 @@ const JobBoard = () => {
     }
   };
 
-  const filteredJobs = useMemo(() => {
-    console.log('Filtering jobs - Total:', jobs.length);
-    console.log('Current filters:', { jobTypeFilter, wageFilter, searchTerm });
+  const parseWageToMonthly = (wageString: string): number => {
+    const numbers = wageString.match(/\d+/g);
+    if (!numbers || numbers.length === 0) return 0;
     
+    const value = parseInt(numbers[0]);
+    const isHourly = wageString.toLowerCase().includes('hour') || wageString.toLowerCase().includes('/hr');
+    
+    // Convert hourly to monthly (assuming 8 hours/day, 26 days/month)
+    return isHourly ? value * 8 * 26 : value;
+  };
+
+  const filteredJobs = useMemo(() => {
     let results = [...jobs];
 
     // Apply filters FIRST before search
     results = results.filter(job => {
-      console.log('Job type:', job.job_type, 'Filter:', jobTypeFilter);
       const matchesJobType = jobTypeFilter === 'all' || job.job_type === jobTypeFilter;
       
       const matchesWage = wageFilter === 'all' || (() => {
-        const wage = job.wage.toLowerCase();
-        if (wageFilter === 'low') return wage.includes('300') || wage.includes('5000') || wage.includes('8000');
-        if (wageFilter === 'medium') return wage.includes('10000') || wage.includes('15000');
-        if (wageFilter === 'high') return wage.includes('20000') || parseFloat(wage.replace(/[^0-9]/g, '')) > 20000;
+        const monthlyWage = parseWageToMonthly(job.wage);
+        
+        if (wageFilter === 'low') return monthlyWage >= 300 && monthlyWage <= 8000;
+        if (wageFilter === 'medium') return monthlyWage > 8000 && monthlyWage <= 15000;
+        if (wageFilter === 'high') return monthlyWage > 15000;
         return true;
       })();
       
       return matchesJobType && matchesWage;
     });
-
-    console.log('After filters:', results.length);
 
     // Apply fuzzy search if there's a search term
     if (searchTerm.trim()) {
@@ -126,7 +132,6 @@ const JobBoard = () => {
       results = fuseResults.map(result => result.item);
     }
 
-    console.log('Final results:', results.length);
     return results;
   }, [jobs, searchTerm, jobTypeFilter, wageFilter]);
 
