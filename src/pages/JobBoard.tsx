@@ -92,14 +92,22 @@ const JobBoard = () => {
   };
 
   const parseWageToMonthly = (wageString: string): number => {
-    const numbers = wageString.match(/\d+/g);
+    // Remove ₹ symbol and extract all numbers (handling commas)
+    const cleanString = wageString.replace(/₹|,/g, '');
+    const numbers = cleanString.match(/\d+/g);
     if (!numbers || numbers.length === 0) return 0;
     
+    // Take the first number (minimum of range)
     const value = parseInt(numbers[0]);
+    
+    // Check if it's daily wage and convert to monthly (26 working days)
+    const isDaily = wageString.toLowerCase().includes('day') || wageString.toLowerCase().includes('/day');
     const isHourly = wageString.toLowerCase().includes('hour') || wageString.toLowerCase().includes('/hr');
     
-    // Convert hourly to monthly (assuming 8 hours/day, 26 days/month)
-    return isHourly ? value * 8 * 26 : value;
+    if (isDaily) return value * 26;
+    if (isHourly) return value * 8 * 26;
+    
+    return value;
   };
 
   const filteredJobs = useMemo(() => {
