@@ -23,12 +23,14 @@ const JobBoard = () => {
   const [loading, setLoading] = useState(false);
   const [jobTypeFilter, setJobTypeFilter] = useState<string>('all');
   const [wageFilter, setWageFilter] = useState<string>('all');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     fetchJobs();
   }, []);
 
   const fetchJobs = async () => {
+    setIsLoading(true);
     const { data, error } = await supabase
       .from('jobs')
       .select('*, shops(name, address, category)')
@@ -37,10 +39,12 @@ const JobBoard = () => {
 
     if (error) {
       toast.error('Failed to fetch jobs');
+      setIsLoading(false);
       return;
     }
 
     setJobs(data || []);
+    setIsLoading(false);
   };
 
   const handleApply = async () => {
@@ -103,25 +107,33 @@ const JobBoard = () => {
   });
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-        <div className="space-y-6">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => navigate('/')}
-              className="rounded-full"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <div className="space-y-2">
-              <h1 className="text-4xl font-bold">Local Job Board</h1>
-              <p className="text-muted-foreground">
-                Find part-time and full-time opportunities in your community
-              </p>
-            </div>
+    <div className="min-h-screen bg-background animate-fade-in">
+      {isLoading ? (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading jobs...</p>
           </div>
+        </div>
+      ) : (
+        <div className="container mx-auto px-4 py-8">
+          <div className="space-y-6">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => navigate('/')}
+                className="rounded-full hover:scale-110 transition-all hover:shadow-glow"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <div className="space-y-2">
+                <h1 className="text-4xl font-bold">Local Job Board</h1>
+                <p className="text-muted-foreground">
+                  Find part-time and full-time opportunities in your community
+                </p>
+              </div>
+            </div>
 
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
@@ -161,11 +173,16 @@ const JobBoard = () => {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredJobs.map((job) => (
-              <Card key={job.id} className="p-6 space-y-4 hover:shadow-medium transition-all">
+            {filteredJobs.map((job, index) => (
+              <Card 
+                key={job.id} 
+                className="p-6 space-y-4 hover:shadow-glow transition-all duration-300 hover:scale-105 hover:-translate-y-1 animate-slide-up cursor-pointer"
+                style={{ animationDelay: `${index * 50}ms` }}
+                onClick={() => navigate(`/shop/${job.shop_id}`)}
+              >
                 <div className="space-y-2">
                   <h3 className="text-xl font-semibold">{job.title}</h3>
-                  <p className="text-sm text-muted-foreground">{job.shops?.name}</p>
+                  <p className="text-sm text-primary hover:underline">{job.shops?.name}</p>
                 </div>
 
                 <div className="space-y-2">
@@ -174,8 +191,8 @@ const JobBoard = () => {
                     <Badge variant="outline">{job.job_type}</Badge>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <DollarSign className="w-4 h-4" />
-                    <span>{job.wage}</span>
+                    <DollarSign className="w-4 h-4 text-primary" />
+                    <span className="font-semibold text-primary">{job.wage}</span>
                   </div>
                   {job.shift_hours && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -185,20 +202,21 @@ const JobBoard = () => {
                   )}
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <MapPin className="w-4 h-4" />
-                    <span>{job.shops?.address}</span>
+                    <span className="line-clamp-1">{job.shops?.address}</span>
                   </div>
                 </div>
 
                 {job.description && (
-                  <p className="text-sm line-clamp-3">{job.description}</p>
+                  <p className="text-sm line-clamp-2 text-muted-foreground">{job.description}</p>
                 )}
 
                 <Button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setSelectedJob(job);
                     setApplyDialogOpen(true);
                   }}
-                  className="w-full"
+                  className="w-full hover:shadow-glow transition-all"
                 >
                   Apply Now
                 </Button>
@@ -207,12 +225,14 @@ const JobBoard = () => {
           </div>
 
           {filteredJobs.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">No jobs found matching your search</p>
+            <div className="text-center py-12 animate-fade-in">
+              <Briefcase className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground text-lg">No jobs found matching your search</p>
             </div>
           )}
         </div>
       </div>
+      )}
 
       <Dialog open={applyDialogOpen} onOpenChange={setApplyDialogOpen}>
         <DialogContent>

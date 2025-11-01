@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface Shop {
   id: string;
@@ -23,11 +24,14 @@ interface GoogleMapProps {
 }
 
 const GoogleMap = ({ shops, onShopClick, center, zoom = 14 }: GoogleMapProps) => {
+  const navigate = useNavigate();
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.Marker[]>([]);
   const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
+  const userMarkerRef = useRef<google.maps.Marker | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isNearbyMode, setIsNearbyMode] = useState(false);
 
   // Initialize Google Maps
   useEffect(() => {
@@ -139,7 +143,7 @@ const GoogleMap = ({ shops, onShopClick, center, zoom = 14 }: GoogleMapProps) =>
 
     // Global function for view details button
     (window as any).viewShopDetails = (shopId: string) => {
-      onShopClick(shopId);
+      navigate(`/shop/${shopId}`);
       infoWindowRef.current?.close();
     };
 
@@ -152,6 +156,7 @@ const GoogleMap = ({ shops, onShopClick, center, zoom = 14 }: GoogleMapProps) =>
   // Recenter to user location
   const recenterToUserLocation = () => {
     if (navigator.geolocation && mapInstanceRef.current) {
+      setIsNearbyMode(true);
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const userLocation = {
@@ -161,8 +166,13 @@ const GoogleMap = ({ shops, onShopClick, center, zoom = 14 }: GoogleMapProps) =>
           mapInstanceRef.current?.setCenter(userLocation);
           mapInstanceRef.current?.setZoom(15);
 
+          // Remove old user marker if exists
+          if (userMarkerRef.current) {
+            userMarkerRef.current.setMap(null);
+          }
+
           // Add user location marker
-          new google.maps.Marker({
+          userMarkerRef.current = new google.maps.Marker({
             position: userLocation,
             map: mapInstanceRef.current,
             icon: {
@@ -174,10 +184,14 @@ const GoogleMap = ({ shops, onShopClick, center, zoom = 14 }: GoogleMapProps) =>
               scale: 8,
             },
             title: 'Your Location',
+            animation: google.maps.Animation.DROP,
           });
+
+          setTimeout(() => setIsNearbyMode(false), 2000);
         },
         (error) => {
           console.error('Error getting location:', error);
+          setIsNearbyMode(false);
         }
       );
     }
@@ -188,11 +202,11 @@ const GoogleMap = ({ shops, onShopClick, center, zoom = 14 }: GoogleMapProps) =>
       <div ref={mapRef} className="w-full h-full rounded-2xl overflow-hidden shadow-medium" />
       
       {/* Map Legend */}
-      <div className="absolute bottom-6 left-6 bg-card p-4 rounded-2xl shadow-medium border border-border">
+      <div className="absolute bottom-6 left-6 bg-card p-4 rounded-2xl shadow-medium border border-border backdrop-blur-sm bg-opacity-95 transition-all hover:shadow-glow">
         <h3 className="text-sm font-semibold mb-3">Map Legend</h3>
         <div className="space-y-2 text-xs">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-success"></div>
+            <div className="w-4 h-4 rounded-full bg-success animate-pulse-soft"></div>
             <span>Active Deal</span>
           </div>
           <div className="flex items-center gap-2">
@@ -208,7 +222,9 @@ const GoogleMap = ({ shops, onShopClick, center, zoom = 14 }: GoogleMapProps) =>
 
       {/* GPS Button */}
       <button 
-        className="absolute bottom-6 right-6 bg-card p-3 rounded-full shadow-medium border border-border hover:bg-accent transition-colors"
+        className={`absolute bottom-6 right-6 bg-card p-3 rounded-full shadow-medium border border-border hover:bg-accent transition-all hover:scale-110 ${
+          isNearbyMode ? 'shadow-glow animate-pulse-soft' : ''
+        }`}
         onClick={recenterToUserLocation}
         title="Find shops near me"
       >
@@ -216,6 +232,17 @@ const GoogleMap = ({ shops, onShopClick, center, zoom = 14 }: GoogleMapProps) =>
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
+      </button>
+
+      {/* Explore Nearby Floating Button */}
+      <button 
+        className="absolute top-6 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-6 py-3 rounded-full shadow-glow hover:shadow-[0_0_40px_hsl(var(--primary-glow)/_0.5)] transition-all hover:scale-105 font-semibold flex items-center gap-2 animate-float"
+        onClick={recenterToUserLocation}
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        Explore Nearby
       </button>
     </div>
   );

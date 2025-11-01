@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import GoogleMap from '@/components/GoogleMap';
 import ShopQuickView from '@/components/ShopQuickView';
@@ -69,29 +69,31 @@ const Index = () => {
   // Get unique categories from shops
   const categories = ['All', ...Array.from(new Set(shops.map(shop => shop.category)))];
 
-  // Filter shops based on category, search, and open status
-  const filteredShops = shops.filter((shop) => {
-    const matchesCategory = selectedCategory === 'All' || shop.category === selectedCategory;
-    const matchesSearch = searchQuery === '' || 
-      shop.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      shop.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      shop.subcategory?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesOpenStatus = !showOpenOnly || shop.open_now;
-    
-    return matchesCategory && matchesSearch && matchesOpenStatus;
-  });
+  // Filter shops based on category, search, and open status with memoization
+  const filteredShops = useMemo(() => {
+    return shops.filter((shop) => {
+      const matchesCategory = selectedCategory === 'All' || shop.category === selectedCategory;
+      const matchesSearch = searchQuery === '' || 
+        shop.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        shop.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        shop.subcategory?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesOpenStatus = !showOpenOnly || shop.open_now;
+      
+      return matchesCategory && matchesSearch && matchesOpenStatus;
+    });
+  }, [shops, selectedCategory, searchQuery, showOpenOnly]);
 
   // Count active offers (you can fetch this from offers table later)
   const activeOffers = 0; // Placeholder for now
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background animate-fade-in">
       {/* Hero Section */}
       <div className="relative h-64 overflow-hidden">
         <img
           src={heroImage}
           alt="Re:Local Community"
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/50 to-background"></div>
         
@@ -252,17 +254,18 @@ const Index = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredShops.map((shop) => (
+            {filteredShops.map((shop, index) => (
               <div
                 key={shop.id}
-                className="bg-card rounded-2xl overflow-hidden shadow-soft hover:shadow-medium transition-all cursor-pointer border border-border"
-                onClick={() => setSelectedShopId(shop.id)}
+                className="bg-card rounded-2xl overflow-hidden shadow-soft hover:shadow-glow transition-all duration-300 cursor-pointer border border-border hover:scale-105 hover:-translate-y-1 animate-slide-up"
+                style={{ animationDelay: `${index * 50}ms` }}
+                onClick={() => navigate(`/shop/${shop.id}`)}
               >
-                <div className="relative h-48">
+                <div className="relative h-48 overflow-hidden">
                   <img
                     src={shop.photos?.[0] || '/placeholder.svg'}
                     alt={shop.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
                   />
                   {!shop.open_now && (
                     <Badge variant="destructive" className="absolute top-3 right-3">
@@ -270,7 +273,7 @@ const Index = () => {
                     </Badge>
                   )}
                   {shop.open_now && (
-                    <Badge variant="success" className="absolute top-3 right-3">
+                    <Badge variant="success" className="absolute top-3 right-3 animate-pulse-soft">
                       Open Now
                     </Badge>
                   )}

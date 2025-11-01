@@ -1,16 +1,118 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { mockShops } from '@/lib/mockData';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Star, MapPin, Phone, Clock, Share2, Heart, Briefcase } from 'lucide-react';
 
+interface Shop {
+  id: string;
+  name: string;
+  category: string;
+  subcategory?: string;
+  latitude: number;
+  longitude: number;
+  rating: number;
+  review_count: number;
+  description?: string;
+  photos?: string[];
+  verified: boolean;
+  open_now: boolean;
+  phone: string;
+  address: string;
+  hours?: any;
+}
+
+interface Product {
+  id: string;
+  shop_id: string;
+  name: string;
+  description?: string;
+  price: number;
+  image_url?: string;
+  featured: boolean;
+  in_stock: boolean;
+}
+
+interface Offer {
+  id: string;
+  shop_id: string;
+  title: string;
+  description?: string;
+  discount_type: string;
+  discount_value: string;
+  start_at: string;
+  end_at: string;
+  active: boolean;
+}
+
 const ShopProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  
-  const shop = mockShops.find((s) => s.id === id);
+  const [shop, setShop] = useState<Shop | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [offers, setOffers] = useState<Offer[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchShopData = async () => {
+      if (!id) return;
+
+      setIsLoading(true);
+      
+      // Fetch shop
+      const { data: shopData, error: shopError } = await supabase
+        .from('shops')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (shopError) {
+        console.error('Error fetching shop:', shopError);
+        setIsLoading(false);
+        return;
+      }
+
+      setShop(shopData);
+
+      // Fetch products
+      const { data: productsData } = await supabase
+        .from('products')
+        .select('*')
+        .eq('shop_id', id)
+        .eq('in_stock', true)
+        .limit(6);
+
+      if (productsData) setProducts(productsData);
+
+      // Fetch active offers
+      const { data: offersData } = await supabase
+        .from('offers')
+        .select('*')
+        .eq('shop_id', id)
+        .eq('active', true)
+        .gt('end_at', new Date().toISOString());
+
+      if (offersData) setOffers(offersData);
+
+      setIsLoading(false);
+    };
+
+    fetchShopData();
+  }, [id]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading shop details...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!shop) {
     return (
@@ -23,9 +125,10 @@ const ShopProfile = () => {
     );
   }
 
-  const getOfferTimeRemaining = (expiresAt: Date) => {
+  const getOfferTimeRemaining = (endAt: string) => {
     const now = new Date();
-    const diff = expiresAt.getTime() - now.getTime();
+    const end = new Date(endAt);
+    const diff = end.getTime() - now.getTime();
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
     
@@ -40,13 +143,13 @@ const ShopProfile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background animate-fade-in">
       {/* Hero Image */}
       <div className="relative h-80 overflow-hidden">
         <img
-          src={shop.image}
+          src={shop.photos?.[0] || '/placeholder.svg'}
           alt={shop.name}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent"></div>
         
@@ -54,7 +157,7 @@ const ShopProfile = () => {
         <Button
           variant="secondary"
           size="icon"
-          className="absolute top-6 left-6 rounded-full shadow-medium"
+          className="absolute top-6 left-6 rounded-full shadow-medium hover:shadow-glow transition-all hover:scale-110"
           onClick={() => navigate('/')}
         >
           <ArrowLeft className="w-5 h-5" />
@@ -90,7 +193,7 @@ const ShopProfile = () => {
               <div className="flex items-center gap-2 bg-warning/10 px-4 py-2 rounded-full">
                 <Star className="w-5 h-5 fill-warning text-warning" />
                 <span className="font-bold text-lg">{shop.rating}</span>
-                <span className="text-sm text-muted-foreground">({shop.reviewCount})</span>
+                <span className="text-sm text-muted-foreground">({shop.review_count})</span>
               </div>
             </div>
 
@@ -103,8 +206,8 @@ const ShopProfile = () => {
                   <MapPin className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Distance</p>
-                  <p className="font-semibold">{shop.distance}</p>
+                  <p className="text-sm text-muted-foreground">Address</p>
+                  <p className="font-semibold text-sm">{shop.address}</p>
                 </div>
               </div>
               
@@ -113,8 +216,8 @@ const ShopProfile = () => {
                   <Clock className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Hours</p>
-                  <p className="font-semibold">{shop.hours}</p>
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <p className="font-semibold">{shop.open_now ? 'Open Now' : 'Closed'}</p>
                 </div>
               </div>
 
@@ -162,112 +265,133 @@ const ShopProfile = () => {
             </TabsList>
 
             <TabsContent value="offers" className="mt-6 space-y-4">
-              {shop.offer ? (
-                <Card className="p-6 bg-success/10 border-success/20">
-                  <div className="space-y-4">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="text-xl font-bold text-success mb-2">
-                          🎉 {shop.offer.title}
-                        </h3>
-                        <p className="text-foreground/70">
-                          Get {shop.offer.discount} discount on select items!
-                        </p>
+              {offers.length > 0 ? (
+                offers.map((offer) => (
+                  <Card key={offer.id} className="p-6 bg-success/10 border-success/20 animate-slide-up hover:shadow-glow transition-all">
+                    <div className="space-y-4">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="text-xl font-bold text-success mb-2">
+                            🎉 {offer.title}
+                          </h3>
+                          <p className="text-foreground/70">
+                            {offer.description || `Get ${offer.discount_value} discount!`}
+                          </p>
+                        </div>
+                        <Badge variant="success">
+                          {getOfferTimeRemaining(offer.end_at)}
+                        </Badge>
                       </div>
-                      <Badge variant="success">
-                        {getOfferTimeRemaining(shop.offer.expiresAt)}
-                      </Badge>
-                    </div>
-                    
-                    <div className="bg-card p-4 rounded-xl border border-border">
-                      <p className="text-xs text-muted-foreground mb-2">COUPON CODE</p>
-                      <div className="flex items-center justify-between">
-                        <code className="text-lg font-mono font-bold">SAVE{shop.offer.discount}</code>
-                        <Button size="sm" className="bg-success hover:bg-success/90">
-                          Copy Code
-                        </Button>
+                      
+                      <div className="bg-card p-4 rounded-xl border border-border">
+                        <p className="text-xs text-muted-foreground mb-2">DISCOUNT</p>
+                        <div className="flex items-center justify-between">
+                          <code className="text-lg font-mono font-bold">{offer.discount_value}</code>
+                          <Button size="sm" className="bg-success hover:bg-success/90">
+                            Claim Offer
+                          </Button>
+                        </div>
                       </div>
-                    </div>
 
-                    <p className="text-sm text-muted-foreground">
-                      * Terms and conditions apply. Valid for in-store purchases only.
-                    </p>
-                  </div>
-                </Card>
+                      <p className="text-sm text-muted-foreground">
+                        * Terms and conditions apply. Valid for in-store purchases only.
+                      </p>
+                    </div>
+                  </Card>
+                ))
               ) : (
                 <div className="text-center py-12">
                   <p className="text-muted-foreground">No active offers at the moment</p>
                   <p className="text-sm text-muted-foreground mt-2">Check back soon for great deals!</p>
                 </div>
               )}
-            </TabsContent>
 
-            <TabsContent value="jobs" className="mt-6 space-y-4">
-              {shop.jobs && shop.jobs.length > 0 ? (
-                shop.jobs.map((job, index) => (
-                  <Card key={index} className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex gap-4">
-                        <div className="p-3 bg-primary/10 rounded-full">
-                          <Briefcase className="w-6 h-6 text-primary" />
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-lg mb-1">{job.title}</h3>
-                          <div className="flex gap-3 text-sm text-muted-foreground">
-                            <span>{job.type}</span>
-                            <span>•</span>
-                            <span className="font-semibold text-primary">{job.wage}</span>
+              {/* Products Section */}
+              {products.length > 0 && (
+                <div className="mt-8">
+                  <h3 className="text-xl font-bold mb-4">Popular Products</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {products.map((product, index) => (
+                      <Card key={product.id} className="overflow-hidden hover:shadow-glow transition-all animate-slide-up" style={{ animationDelay: `${index * 50}ms` }}>
+                        {product.image_url && (
+                          <div className="relative h-40 overflow-hidden">
+                            <img
+                              src={product.image_url}
+                              alt={product.name}
+                              className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                            />
+                          </div>
+                        )}
+                        <div className="p-4">
+                          <h4 className="font-semibold mb-2">{product.name}</h4>
+                          {product.description && (
+                            <p className="text-sm text-muted-foreground mb-3">{product.description}</p>
+                          )}
+                          <div className="flex items-center justify-between">
+                            <span className="text-lg font-bold text-primary">₹{product.price}</span>
+                            {product.featured && (
+                              <Badge variant="default">Featured</Badge>
+                            )}
                           </div>
                         </div>
-                      </div>
-                    </div>
-                    
-                    <p className="text-sm text-foreground/70 mb-4">
-                      Join our team! We're looking for enthusiastic individuals to help grow our business.
-                    </p>
-
-                    <Button className="w-full bg-primary hover:bg-primary/90">
-                      Apply Now
-                    </Button>
-                  </Card>
-                ))
-              ) : (
-                <div className="text-center py-12">
-                  <p className="text-muted-foreground">No job openings at the moment</p>
+                      </Card>
+                    ))}
+                  </div>
                 </div>
               )}
             </TabsContent>
 
+            <TabsContent value="jobs" className="mt-6 space-y-4">
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">Job listings feature coming soon!</p>
+                <p className="text-sm text-muted-foreground mt-2">Check the Jobs page for current openings</p>
+                <Button 
+                  className="mt-4" 
+                  onClick={() => navigate('/jobs')}
+                >
+                  View All Jobs
+                </Button>
+              </div>
+            </TabsContent>
+
             <TabsContent value="about" className="mt-6">
-              <Card className="p-6">
+              <Card className="p-6 animate-slide-up">
                 <h3 className="font-bold text-lg mb-4">About {shop.name}</h3>
                 <p className="text-foreground/80 mb-6">{shop.description}</p>
                 
                 <div className="space-y-4">
                   <div>
-                    <h4 className="font-semibold mb-2">Categories</h4>
+                    <h4 className="font-semibold mb-2">Category</h4>
                     <div className="flex flex-wrap gap-2">
-                      {shop.tags.map((tag) => (
-                        <Badge key={tag} variant="outline">{tag}</Badge>
-                      ))}
+                      <Badge variant="default">{shop.category}</Badge>
+                      {shop.subcategory && (
+                        <Badge variant="outline">{shop.subcategory}</Badge>
+                      )}
                     </div>
                   </div>
 
                   <div>
-                    <h4 className="font-semibold mb-2">Opening Hours</h4>
-                    <p className="text-foreground/70">{shop.hours}</p>
+                    <h4 className="font-semibold mb-2">Status</h4>
+                    <Badge variant={shop.open_now ? 'success' : 'destructive'}>
+                      {shop.open_now ? 'Currently Open' : 'Currently Closed'}
+                    </Badge>
                   </div>
 
                   <div>
                     <h4 className="font-semibold mb-2">Contact</h4>
                     <p className="text-foreground/70">{shop.phone}</p>
                   </div>
+
+                  <div>
+                    <h4 className="font-semibold mb-2">Address</h4>
+                    <p className="text-foreground/70">{shop.address}</p>
+                  </div>
                 </div>
               </Card>
             </TabsContent>
 
             <TabsContent value="reviews" className="mt-6">
-              <Card className="p-6">
+              <Card className="p-6 animate-slide-up">
                 <div className="text-center py-12">
                   <div className="mb-4">
                     <div className="text-4xl font-bold mb-2">{shop.rating}</div>
@@ -283,7 +407,7 @@ const ShopProfile = () => {
                         />
                       ))}
                     </div>
-                    <p className="text-sm text-muted-foreground">{shop.reviewCount} reviews</p>
+                    <p className="text-sm text-muted-foreground">{shop.review_count} reviews</p>
                   </div>
                   <p className="text-muted-foreground">Reviews feature coming soon!</p>
                 </div>
