@@ -91,23 +91,24 @@ const JobBoard = () => {
     }
   };
 
-  const parseWageToMonthly = (wageString: string): number => {
+  const parseWageRange = (wageString: string): { min: number; max: number } => {
     // Remove ₹ symbol and extract all numbers (handling commas)
     const cleanString = wageString.replace(/₹|,/g, '');
     const numbers = cleanString.match(/\d+/g);
-    if (!numbers || numbers.length === 0) return 0;
+    if (!numbers || numbers.length === 0) return { min: 0, max: 0 };
     
-    // Take the first number (minimum of range)
-    const value = parseInt(numbers[0]);
+    // Parse minimum and maximum (or use same value if single number)
+    const minValue = parseInt(numbers[0]);
+    const maxValue = numbers.length > 1 ? parseInt(numbers[1]) : minValue;
     
     // Check if it's daily wage and convert to monthly (26 working days)
     const isDaily = wageString.toLowerCase().includes('day') || wageString.toLowerCase().includes('/day');
     const isHourly = wageString.toLowerCase().includes('hour') || wageString.toLowerCase().includes('/hr');
     
-    if (isDaily) return value * 26;
-    if (isHourly) return value * 8 * 26;
+    if (isDaily) return { min: minValue * 26, max: maxValue * 26 };
+    if (isHourly) return { min: minValue * 8 * 26, max: maxValue * 8 * 26 };
     
-    return value;
+    return { min: minValue, max: maxValue };
   };
 
   const filteredJobs = useMemo(() => {
@@ -118,11 +119,21 @@ const JobBoard = () => {
       const matchesJobType = jobTypeFilter === 'all' || job.job_type === jobTypeFilter;
       
       const matchesWage = wageFilter === 'all' || (() => {
-        const monthlyWage = parseWageToMonthly(job.wage);
+        const wageRange = parseWageRange(job.wage);
         
-        if (wageFilter === 'low') return monthlyWage >= 300 && monthlyWage <= 8000;
-        if (wageFilter === 'medium') return monthlyWage >= 10000 && monthlyWage <= 20000;
-        if (wageFilter === 'high') return monthlyWage > 20000;
+        // Check if job's wage range overlaps with filter range
+        if (wageFilter === 'low') {
+          // Low: 300-8000, overlaps if max >= 300 AND min <= 8000
+          return wageRange.max >= 300 && wageRange.min <= 8000;
+        }
+        if (wageFilter === 'medium') {
+          // Medium: 10000-20000, overlaps if max >= 10000 AND min <= 20000
+          return wageRange.max >= 10000 && wageRange.min <= 20000;
+        }
+        if (wageFilter === 'high') {
+          // High: 20000+, overlaps if max > 20000
+          return wageRange.max > 20000;
+        }
         return true;
       })();
       
