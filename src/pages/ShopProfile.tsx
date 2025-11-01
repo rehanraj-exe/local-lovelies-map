@@ -84,66 +84,69 @@ const ShopProfile = () => {
 
       setIsLoading(true);
       
-      try {
-        // Fetch all data in parallel for better performance
-        const [
-          { data: shopData, error: shopError },
-          { data: productsData },
-          { data: offersData },
-          { data: reviewsData }
-        ] = await Promise.all([
-          // Fetch shop
-          supabase
-            .from('shops')
-            .select('*')
-            .eq('id', id)
-            .maybeSingle(),
-          
-          // Fetch products
-          supabase
-            .from('products')
-            .select('*')
-            .eq('shop_id', id)
-            .eq('in_stock', true)
-            .limit(6),
-          
-          // Fetch active offers
-          supabase
-            .from('offers')
-            .select('*')
-            .eq('shop_id', id)
-            .eq('active', true)
-            .gt('end_at', new Date().toISOString()),
-          
-          // Fetch reviews with profiles in one query (optimized)
-          supabase
-            .from('reviews')
-            .select('*, profiles(full_name)')
-            .eq('shop_id', id)
-            .order('created_at', { ascending: false })
-        ]);
+      // Fetch shop
+      const { data: shopData, error: shopError } = await supabase
+        .from('shops')
+        .select('*')
+        .eq('id', id)
+        .single();
 
-        if (shopError || !shopData) {
-          console.error('Error fetching shop:', shopError);
-          toast.error('Shop not found');
-          navigate('/');
-          return;
-        }
+      if (shopError) {
+        console.error('Error fetching shop:', shopError);
+        setIsLoading(false);
+        return;
+      }
 
-        setShop(shopData);
-        if (productsData) setProducts(productsData);
-        if (offersData) setOffers(offersData);
-        if (reviewsData) setReviews(reviewsData as Review[]);
-      } catch (error) {
-        console.error('Error fetching shop data:', error);
-        toast.error('Failed to load shop data');
+      setShop(shopData);
+
+      // Fetch products
+      const { data: productsData } = await supabase
+        .from('products')
+        .select('*')
+        .eq('shop_id', id)
+        .eq('in_stock', true)
+        .limit(6);
+
+      if (productsData) setProducts(productsData);
+
+      // Fetch active offers
+      const { data: offersData } = await supabase
+        .from('offers')
+        .select('*')
+        .eq('shop_id', id)
+        .eq('active', true)
+        .gt('end_at', new Date().toISOString());
+
+      if (offersData) setOffers(offersData);
+
+      // Fetch reviews
+      const { data: reviewsData } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('shop_id', id)
+        .order('created_at', { ascending: false });
+
+      if (reviewsData) {
+        // Fetch profiles for each review
+        const reviewsWithProfiles = await Promise.all(
+          reviewsData.map(async (review) => {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('full_name')
+              .eq('id', review.user_id)
+              .single();
+            
+            return { ...review, profiles: profileData };
+          })
+        );
+        setReviews(reviewsWithProfiles as Review[]);
       }
 
       setIsLoading(false);
     };
 
     fetchShopData();
-  }, [id, navigate]);
+  }, [id]);
 
   const handleSubmitReview = async () => {
     if (!user) {
