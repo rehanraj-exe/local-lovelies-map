@@ -1,8 +1,25 @@
-import { Shop } from '@/lib/mockData';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Star, MapPin, Phone, Clock, Briefcase, X } from 'lucide-react';
+
+interface Shop {
+  id: string;
+  name: string;
+  category: string;
+  subcategory?: string;
+  latitude: number;
+  longitude: number;
+  rating: number;
+  review_count: number;
+  description?: string;
+  photos?: string[];
+  verified: boolean;
+  open_now: boolean;
+  phone: string;
+  address: string;
+  hours?: any;
+}
 
 interface ShopQuickViewProps {
   shop: Shop;
@@ -51,7 +68,7 @@ const ShopQuickView = ({ shop, onClose }: ShopQuickViewProps) => {
           {/* Image */}
           <div className="relative h-48 rounded-2xl overflow-hidden">
             <img
-              src={shop.image}
+              src={shop.photos?.[0] || '/placeholder.svg'}
               alt={shop.name}
               className="w-full h-full object-cover"
             />
@@ -60,9 +77,9 @@ const ShopQuickView = ({ shop, onClose }: ShopQuickViewProps) => {
                 ✓ Verified
               </Badge>
             )}
-            {shop.offer && (
-              <Badge variant="deal" className="absolute top-4 right-4">
-                🔥 {shop.offer.discount} OFF
+            {shop.open_now && (
+              <Badge variant="success" className="absolute top-4 right-4">
+                🟢 Open Now
               </Badge>
             )}
           </div>
@@ -72,67 +89,33 @@ const ShopQuickView = ({ shop, onClose }: ShopQuickViewProps) => {
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="text-2xl font-bold">{shop.name}</h3>
-                <p className="text-sm text-muted-foreground">{shop.category}</p>
+                <p className="text-sm text-muted-foreground">
+                  {shop.category}
+                  {shop.subcategory && ` • ${shop.subcategory}`}
+                </p>
               </div>
               <div className="flex items-center gap-1">
                 <Star className="w-5 h-5 fill-warning text-warning" />
                 <span className="font-semibold">{shop.rating}</span>
-                <span className="text-sm text-muted-foreground">({shop.reviewCount})</span>
+                <span className="text-sm text-muted-foreground">({shop.review_count})</span>
               </div>
             </div>
 
-            <p className="text-foreground/80">{shop.description}</p>
+            <p className="text-foreground/80">{shop.description || 'No description available'}</p>
 
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
                 <MapPin className="w-4 h-4" />
-                <span>{shop.distance}</span>
+                <span>{shop.address}</span>
               </div>
               <div className="flex items-center gap-1">
-                <Clock className="w-4 h-4" />
-                <span>{shop.hours}</span>
+                <Phone className="w-4 h-4" />
+                <span>{shop.phone}</span>
               </div>
             </div>
           </div>
 
-          {/* Offer Section */}
-          {shop.offer && (
-            <div className="bg-success/10 border border-success/20 rounded-2xl p-4 space-y-2">
-              <div className="flex items-center justify-between">
-                <h4 className="font-semibold text-success">🎉 {shop.offer.title}</h4>
-                <Badge variant="success" className="text-xs">
-                  {getOfferTimeRemaining(shop.offer.expiresAt)}
-                </Badge>
-              </div>
-              <p className="text-sm text-foreground/70">
-                Limited time offer - don't miss out!
-              </p>
-              <Button className="w-full bg-success hover:bg-success/90 text-success-foreground">
-                Copy Coupon Code
-              </Button>
-            </div>
-          )}
-
-          {/* Jobs Section */}
-          {shop.jobs && shop.jobs.length > 0 && (
-            <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 space-y-2">
-              <div className="flex items-center gap-2">
-                <Briefcase className="w-5 h-5 text-primary" />
-                <h4 className="font-semibold text-primary">Hiring Now</h4>
-              </div>
-              {shop.jobs.map((job, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-sm">{job.title}</p>
-                    <p className="text-xs text-muted-foreground">{job.type} • {job.wage}</p>
-                  </div>
-                  <Button size="sm" variant="outline">
-                    Apply
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
+          {/* Note: Offers and Jobs will be fetched separately in future */}
 
           {/* Action Buttons */}
           <div className="grid grid-cols-2 gap-3">

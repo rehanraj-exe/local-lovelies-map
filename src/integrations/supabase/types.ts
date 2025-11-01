@@ -315,7 +315,7 @@ export type Database = {
           menu_items: Json | null
           name: string
           open_now: boolean | null
-          owner_id: string
+          owner_id: string | null
           phone: string
           photos: string[] | null
           rating: number | null
@@ -341,7 +341,7 @@ export type Database = {
           menu_items?: Json | null
           name: string
           open_now?: boolean | null
-          owner_id: string
+          owner_id?: string | null
           phone: string
           photos?: string[] | null
           rating?: number | null
@@ -367,7 +367,7 @@ export type Database = {
           menu_items?: Json | null
           name?: string
           open_now?: boolean | null
-          owner_id?: string
+          owner_id?: string | null
           phone?: string
           photos?: string[] | null
           rating?: number | null

@@ -1,16 +1,35 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import MapView from '@/components/MapView';
+import GoogleMap from '@/components/GoogleMap';
 import ShopQuickView from '@/components/ShopQuickView';
 import TopLocalPicks from '@/components/TopLocalPicks';
-import { mockShops } from '@/lib/mockData';
+import { AIChatAssistant } from '@/components/AIChatAssistant';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, User, Grid, Map, Briefcase, Store, LogOut } from 'lucide-react';
+import { Search, User, Grid, Map, Briefcase, Store, LogOut, Clock, Filter } from 'lucide-react';
 import heroImage from '@/assets/hero-town.jpg';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+
+interface Shop {
+  id: string;
+  name: string;
+  category: string;
+  subcategory?: string;
+  latitude: number;
+  longitude: number;
+  rating: number;
+  review_count: number;
+  description?: string;
+  photos?: string[];
+  verified: boolean;
+  open_now: boolean;
+  phone: string;
+  address: string;
+  hours?: any;
+}
 
 const Index = () => {
   const navigate = useNavigate();
@@ -18,18 +37,52 @@ const Index = () => {
   const [selectedShopId, setSelectedShopId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [shops, setShops] = useState<Shop[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showOpenOnly, setShowOpenOnly] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch shops from database
+  useEffect(() => {
+    const fetchShops = async () => {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('shops')
+        .select('*')
+        .eq('verified', true);
+
+      if (error) {
+        console.error('Error fetching shops:', error);
+      } else {
+        setShops(data || []);
+      }
+      setIsLoading(false);
+    };
+
+    fetchShops();
+  }, []);
 
   const selectedShop = selectedShopId
-    ? mockShops.find((shop) => shop.id === selectedShopId)
+    ? shops.find((shop) => shop.id === selectedShopId)
     : null;
 
-  const categories = ['All', 'Bakery', 'Clothing', 'Grocery', 'Café', 'Bookstore'];
+  // Get unique categories from shops
+  const categories = ['All', ...Array.from(new Set(shops.map(shop => shop.category)))];
 
-  const filteredShops = selectedCategory === 'All' 
-    ? mockShops 
-    : mockShops.filter((shop) => shop.category === selectedCategory);
-  
-  const activeOffers = mockShops.filter((shop) => shop.offer).length;
+  // Filter shops based on category, search, and open status
+  const filteredShops = shops.filter((shop) => {
+    const matchesCategory = selectedCategory === 'All' || shop.category === selectedCategory;
+    const matchesSearch = searchQuery === '' || 
+      shop.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      shop.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      shop.subcategory?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesOpenStatus = !showOpenOnly || shop.open_now;
+    
+    return matchesCategory && matchesSearch && matchesOpenStatus;
+  });
+
+  // Count active offers (you can fetch this from offers table later)
+  const activeOffers = 0; // Placeholder for now
 
   return (
     <div className="min-h-screen bg-background">
@@ -56,14 +109,27 @@ const Index = () => {
       <div className="sticky top-0 z-40 bg-card/95 backdrop-blur-sm border-b border-border shadow-soft">
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col md:flex-row gap-4 items-center">
-            {/* Search */}
+            {/* Search with autocomplete */}
             <div className="relative flex-1 w-full">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
-                placeholder="Search shops, offers, or jobs..."
+                placeholder="Search shops, categories, or areas..."
                 className="pl-10 rounded-full border-border"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
+
+            {/* Open Now Filter */}
+            <Button
+              variant={showOpenOnly ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setShowOpenOnly(!showOpenOnly)}
+              className="rounded-full"
+            >
+              <Clock className="w-4 h-4 mr-2" />
+              Open Now
+            </Button>
 
             {/* View Toggle */}
             <div className="flex gap-2">
@@ -165,14 +231,23 @@ const Index = () => {
 
       {/* Main Content */}
       <div className="container mx-auto px-4 pb-8">
-        {viewMode === 'map' ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center h-96">
+            <div className="text-muted-foreground">Loading shops...</div>
+          </div>
+        ) : viewMode === 'map' ? (
           <div className="space-y-6">
             {/* Top Local Picks */}
             <TopLocalPicks />
 
             {/* Map View */}
             <div className="h-[600px] rounded-2xl overflow-hidden shadow-medium border border-border">
-              <MapView onShopClick={setSelectedShopId} shops={filteredShops} />
+              <GoogleMap 
+                shops={filteredShops} 
+                onShopClick={setSelectedShopId}
+                center={{ lat: 28.6139, lng: 77.2090 }}
+                zoom={13}
+              />
             </div>
           </div>
         ) : (
@@ -185,23 +260,32 @@ const Index = () => {
               >
                 <div className="relative h-48">
                   <img
-                    src={shop.image}
+                    src={shop.photos?.[0] || '/placeholder.svg'}
                     alt={shop.name}
                     className="w-full h-full object-cover"
                   />
-                  {shop.offer && (
-                    <Badge variant="deal" className="absolute top-3 right-3">
-                      {shop.offer.discount} OFF
+                  {!shop.open_now && (
+                    <Badge variant="destructive" className="absolute top-3 right-3">
+                      Closed
+                    </Badge>
+                  )}
+                  {shop.open_now && (
+                    <Badge variant="success" className="absolute top-3 right-3">
+                      Open Now
                     </Badge>
                   )}
                 </div>
                 <div className="p-4">
                   <h3 className="font-semibold text-lg">{shop.name}</h3>
-                  <p className="text-sm text-muted-foreground">{shop.category} • {shop.distance}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {shop.category}
+                    {shop.subcategory && ` • ${shop.subcategory}`}
+                  </p>
                   <div className="flex items-center gap-2 mt-2">
                     <div className="flex items-center gap-1">
                       <span className="text-warning">★</span>
                       <span className="font-medium">{shop.rating}</span>
+                      <span className="text-xs text-muted-foreground">({shop.review_count})</span>
                     </div>
                     {shop.verified && (
                       <Badge variant="outline" className="text-xs">
@@ -223,6 +307,9 @@ const Index = () => {
           onClose={() => setSelectedShopId(null)}
         />
       )}
+
+      {/* AI Chat Assistant */}
+      <AIChatAssistant />
     </div>
   );
 };
