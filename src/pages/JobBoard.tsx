@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Briefcase, MapPin, DollarSign, Clock, Search, ArrowLeft, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getJobImage } from '@/lib/jobData';
 
 const JobBoard = () => {
   const { user } = useAuth();
@@ -176,21 +177,31 @@ const JobBoard = () => {
             {filteredJobs.map((job, index) => (
               <Card 
                 key={job.id} 
-                className="p-6 space-y-4 hover:shadow-glow transition-all duration-300 hover:scale-105 hover:-translate-y-1 animate-slide-up cursor-pointer"
+                className="overflow-hidden hover:shadow-glow transition-all duration-300 hover:scale-105 hover:-translate-y-1 animate-slide-up cursor-pointer"
                 style={{ animationDelay: `${index * 50}ms` }}
                 onClick={() => navigate(`/shop/${job.shop_id}`)}
               >
-                <div className="space-y-2">
-                  <h3 className="text-xl font-semibold">{job.title}</h3>
-                  <p className="text-sm text-primary hover:underline">{job.shops?.name}</p>
+                {/* Job Image */}
+                <div className="relative h-40 overflow-hidden">
+                  <img 
+                    src={getJobImage(job.title)} 
+                    alt={job.title}
+                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent"></div>
+                  <Badge variant="outline" className="absolute top-3 right-3 bg-background/90">
+                    {job.job_type}
+                  </Badge>
                 </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Briefcase className="w-4 h-4" />
-                    <Badge variant="outline">{job.job_type}</Badge>
+                
+                <div className="p-6 space-y-4">
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-semibold">{job.title}</h3>
+                    <p className="text-sm text-primary hover:underline">{job.shops?.name}</p>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <DollarSign className="w-4 h-4 text-primary" />
                     <span className="font-semibold text-primary">{job.wage}</span>
                   </div>
@@ -216,10 +227,11 @@ const JobBoard = () => {
                     setSelectedJob(job);
                     setApplyDialogOpen(true);
                   }}
-                  className="w-full hover:shadow-glow transition-all"
-                >
-                  Apply Now
-                </Button>
+                    className="w-full hover:shadow-glow transition-all"
+                  >
+                    Apply Now
+                  </Button>
+                </div>
               </Card>
             ))}
           </div>

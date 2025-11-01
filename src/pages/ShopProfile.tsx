@@ -5,7 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Star, MapPin, Phone, Clock, Share2, Heart, Briefcase } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
+import { ArrowLeft, Star, MapPin, Phone, Clock, Share2, Heart, Briefcase, Navigation, X } from 'lucide-react';
 
 interface Shop {
   id: string;
@@ -48,13 +53,30 @@ interface Offer {
   active: boolean;
 }
 
+interface Review {
+  id: string;
+  shop_id: string;
+  user_id: string;
+  rating: number;
+  comment?: string;
+  created_at: string;
+  profiles?: {
+    full_name?: string;
+  };
+}
+
 const ShopProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [shop, setShop] = useState<Shop | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [offers, setOffers] = useState<Offer[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showDirections, setShowDirections] = useState(false);
+  const [newReview, setNewReview] = useState({ rating: 5, comment: '' });
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
 
   useEffect(() => {
     const fetchShopData = async () => {
@@ -97,11 +119,93 @@ const ShopProfile = () => {
 
       if (offersData) setOffers(offersData);
 
+      // Fetch reviews
+      const { data: reviewsData } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('shop_id', id)
+        .order('created_at', { ascending: false });
+
+      if (reviewsData) {
+        // Fetch profiles for each review
+        const reviewsWithProfiles = await Promise.all(
+          reviewsData.map(async (review) => {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('full_name')
+              .eq('id', review.user_id)
+              .single();
+            
+            return { ...review, profiles: profileData };
+          })
+        );
+        setReviews(reviewsWithProfiles as Review[]);
+      }
+
       setIsLoading(false);
     };
 
     fetchShopData();
   }, [id]);
+
+  const handleSubmitReview = async () => {
+    if (!user) {
+      toast.error('Please login to leave a review');
+      navigate('/auth');
+      return;
+    }
+
+    if (!id) return;
+
+    const { error } = await supabase
+      .from('reviews')
+      .insert([
+        {
+          shop_id: id,
+          user_id: user.id,
+          rating: newReview.rating,
+          comment: newReview.comment,
+        },
+      ]);
+
+    if (error) {
+      toast.error('Failed to submit review');
+      return;
+    }
+
+    toast.success('Review submitted successfully!');
+    setReviewDialogOpen(false);
+    setNewReview({ rating: 5, comment: '' });
+    
+    // Refresh reviews
+    const { data: reviewsData } = await supabase
+      .from('reviews')
+      .select('*')
+      .eq('shop_id', id)
+      .order('created_at', { ascending: false });
+
+    if (reviewsData) {
+      const reviewsWithProfiles = await Promise.all(
+        reviewsData.map(async (review) => {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', review.user_id)
+            .single();
+          
+          return { ...review, profiles: profileData };
+        })
+      );
+      setReviews(reviewsWithProfiles as Review[]);
+    }
+  };
+
+  const openDirections = () => {
+    if (shop) {
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${shop.latitude},${shop.longitude}`;
+      window.open(url, '_blank');
+    }
+  };
 
   if (isLoading) {
     return (
@@ -238,7 +342,7 @@ const ShopProfile = () => {
                 <Phone className="w-4 h-4 mr-2" />
                 Call
               </Button>
-              <Button variant="outline">
+              <Button variant="outline" onClick={openDirections}>
                 <MapPin className="w-4 h-4 mr-2" />
                 Directions
               </Button>
@@ -392,25 +496,118 @@ const ShopProfile = () => {
 
             <TabsContent value="reviews" className="mt-6">
               <Card className="p-6 animate-slide-up">
-                <div className="text-center py-12">
-                  <div className="mb-4">
-                    <div className="text-4xl font-bold mb-2">{shop.rating}</div>
-                    <div className="flex items-center justify-center gap-1 mb-2">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star
-                          key={star}
-                          className={`w-5 h-5 ${
-                            star <= Math.floor(shop.rating)
-                              ? 'fill-warning text-warning'
-                              : 'text-muted-foreground'
-                          }`}
-                        />
-                      ))}
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <div className="flex items-center gap-4 mb-2">
+                      <div className="text-4xl font-bold">{shop.rating}</div>
+                      <div>
+                        <div className="flex items-center gap-1 mb-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              className={`w-5 h-5 ${
+                                star <= Math.floor(shop.rating)
+                                  ? 'fill-warning text-warning'
+                                  : 'text-muted-foreground'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <p className="text-sm text-muted-foreground">{reviews.length} reviews</p>
+                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">{shop.review_count} reviews</p>
                   </div>
-                  <p className="text-muted-foreground">Reviews feature coming soon!</p>
+                  
+                  <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button>Write a Review</Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Write a Review for {shop.name}</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-sm font-medium mb-2 block">Rating</label>
+                          <div className="flex gap-2">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <button
+                                key={star}
+                                onClick={() => setNewReview({ ...newReview, rating: star })}
+                                className="transition-transform hover:scale-110"
+                              >
+                                <Star
+                                  className={`w-8 h-8 ${
+                                    star <= newReview.rating
+                                      ? 'fill-warning text-warning'
+                                      : 'text-muted-foreground'
+                                  }`}
+                                />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium mb-2 block">Your Review</label>
+                          <Textarea
+                            value={newReview.comment}
+                            onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
+                            placeholder="Share your experience..."
+                            rows={4}
+                          />
+                        </div>
+                        <Button onClick={handleSubmitReview} className="w-full">
+                          Submit Review
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
+
+                {reviews.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-muted-foreground">No reviews yet. Be the first to review!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {reviews.map((review) => (
+                      <Card key={review.id} className="p-4">
+                        <div className="flex items-start gap-3">
+                          <Avatar>
+                            <AvatarFallback className="bg-primary/10 text-primary">
+                              {review.profiles?.full_name?.[0]?.toUpperCase() || 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-2">
+                              <div>
+                                <p className="font-semibold">{review.profiles?.full_name || 'Anonymous'}</p>
+                                <div className="flex items-center gap-1">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <Star
+                                      key={star}
+                                      className={`w-4 h-4 ${
+                                        star <= review.rating
+                                          ? 'fill-warning text-warning'
+                                          : 'text-muted-foreground'
+                                      }`}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(review.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                            {review.comment && (
+                              <p className="text-sm text-muted-foreground">{review.comment}</p>
+                            )}
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </Card>
             </TabsContent>
           </Tabs>

@@ -412,11 +412,31 @@ const ShopDashboard = () => {
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold">Job Postings</h2>
-              <Badge variant="outline">{jobs.length} active</Badge>
+              <div className="flex items-center gap-3">
+                <Badge variant="outline">{jobs.length} active</Badge>
+                <Button onClick={() => navigate('/applications')}>
+                  View Applications
+                </Button>
+              </div>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Job management coming soon. Visit the main site to view your job listings.
+            <p className="text-sm text-muted-foreground mb-4">
+              Manage your job applications and hire the best candidates.
             </p>
+            {jobs.length > 0 && (
+              <div className="grid gap-3 mt-4">
+                {jobs.slice(0, 3).map((job) => (
+                  <div key={job.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <div>
+                      <p className="font-semibold">{job.title}</p>
+                      <p className="text-sm text-muted-foreground">{job.job_type} • {job.wage}</p>
+                    </div>
+                    <Badge variant={job.active ? 'success' : 'secondary'}>
+                      {job.active ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            )}
           </Card>
         </div>
       </div>
