@@ -381,12 +381,10 @@ const Index = () => {
                       </Badge>
                     )}
                   </div>
-                  {shop.hours && (
-                    <p className="text-xs text-muted-foreground mt-2">
-                      <Clock className="w-3 h-3 inline mr-1" />
-                      {shop.hours.monday?.open || '9:00 AM'} - {shop.hours.monday?.close || '9:00 PM'}
-                    </p>
-                  )}
+                  <div className="flex items-center gap-1 mt-2 text-xs font-medium text-primary">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>{shop.hours?.monday?.open || '9:00 AM'} - {shop.hours?.monday?.close || '9:00 PM'}</span>
+                  </div>
                 </div>
               </div>
             ))}

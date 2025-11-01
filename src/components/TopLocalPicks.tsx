@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Star, MapPin, Sparkles } from 'lucide-react';
+import { Star, MapPin, Sparkles, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const TopLocalPicks = () => {
@@ -157,6 +157,11 @@ const TopLocalPicks = () => {
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <MapPin className="w-3 h-3" />
                 <span>{shop.address}</span>
+              </div>
+
+              <div className="flex items-center gap-1 text-xs font-medium text-primary mt-1">
+                <Clock className="w-3.5 h-3.5" />
+                <span>{shop.hours?.monday?.open || '9:00 AM'} - {shop.hours?.monday?.close || '9:00 PM'}</span>
               </div>
 
               {shop.verified && (

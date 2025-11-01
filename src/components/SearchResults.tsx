@@ -18,6 +18,7 @@ interface Shop {
   open_now: boolean;
   phone: string;
   address: string;
+  hours?: any;
 }
 
 interface SearchResultsProps {
@@ -135,6 +136,12 @@ export const SearchResults = ({ shops, searchQuery }: SearchResultsProps) => {
                   <div className="flex items-center gap-2 text-sm">
                     <Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                     <span className="text-muted-foreground">{shop.phone}</span>
+                  </div>
+
+                  {/* Opening Hours */}
+                  <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                    <Clock className="w-4 h-4 flex-shrink-0" />
+                    <span>{shop.hours?.monday?.open || '9:00 AM'} - {shop.hours?.monday?.close || '9:00 PM'}</span>
                   </div>
                 </div>
               </Card>
