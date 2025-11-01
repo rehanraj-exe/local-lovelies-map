@@ -33,6 +33,7 @@ interface Shop {
   phone: string;
   address: string;
   hours?: any;
+  created_at?: string;
 }
 
 const Index = () => {
@@ -45,6 +46,7 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showOpenOnly, setShowOpenOnly] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [mapFilter, setMapFilter] = useState<'all' | 'deals' | 'new' | 'open' | 'closed'>('all');
 
   // Fetch shops from database
   useEffect(() => {
@@ -97,9 +99,18 @@ const Index = () => {
       const matchesCategory = selectedCategory === 'All' || shop.category === selectedCategory;
       const matchesOpenStatus = !showOpenOnly || shop.open_now;
       
-      return matchesCategory && matchesOpenStatus;
+      // Apply map filter
+      const isNew = new Date(shop.created_at || '').getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000;
+      const matchesMapFilter = 
+        mapFilter === 'all' ||
+        (mapFilter === 'deals' && shop.verified) ||
+        (mapFilter === 'new' && isNew) ||
+        (mapFilter === 'open' && shop.open_now) ||
+        (mapFilter === 'closed' && !shop.open_now);
+      
+      return matchesCategory && matchesOpenStatus && matchesMapFilter;
     });
-  }, [shops, fuse, selectedCategory, searchQuery, showOpenOnly]);
+  }, [shops, fuse, selectedCategory, searchQuery, showOpenOnly, mapFilter]);
 
   // Count active offers (you can fetch this from offers table later)
   const activeOffers = 0; // Placeholder for now
@@ -274,6 +285,50 @@ const Index = () => {
             {/* Top Local Picks */}
             <TopLocalPicks />
 
+            {/* Map Filter Buttons */}
+            <div className="flex gap-2 flex-wrap">
+              <Button
+                variant={mapFilter === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setMapFilter('all')}
+                className="rounded-full"
+              >
+                All Shops
+              </Button>
+              <Button
+                variant={mapFilter === 'deals' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setMapFilter('deals')}
+                className="rounded-full"
+              >
+                🔥 Active Deals
+              </Button>
+              <Button
+                variant={mapFilter === 'new' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setMapFilter('new')}
+                className="rounded-full"
+              >
+                ✨ New Shops
+              </Button>
+              <Button
+                variant={mapFilter === 'open' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setMapFilter('open')}
+                className="rounded-full"
+              >
+                Open Now
+              </Button>
+              <Button
+                variant={mapFilter === 'closed' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setMapFilter('closed')}
+                className="rounded-full"
+              >
+                Currently Closed
+              </Button>
+            </div>
+
             {/* Map View */}
             <div className="relative h-[600px] mb-24 rounded-2xl shadow-medium border border-border z-0">
               <MapView 
@@ -326,6 +381,12 @@ const Index = () => {
                       </Badge>
                     )}
                   </div>
+                  {shop.hours && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      <Clock className="w-3 h-3 inline mr-1" />
+                      {shop.hours.monday?.open || '9:00 AM'} - {shop.hours.monday?.close || '9:00 PM'}
+                    </p>
+                  )}
                 </div>
               </div>
             ))}

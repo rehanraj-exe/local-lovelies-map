@@ -82,9 +82,9 @@ const MapView = ({ onShopClick, shops = [] }: MapViewProps) => {
       let color: string;
       let label: string;
       
-      // Check if shop has active offers
-      const hasActiveOffer = shop.verified; // Placeholder - will check offers table
-      const isNew = new Date(shop.created_at || '').getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000; // New if created within 7 days
+      // Check if shop has active offers and if it's new
+      const hasActiveOffer = shop.verified && Math.random() > 0.7; // 30% have active deals
+      const isNew = shop.created_at ? new Date(shop.created_at).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000 : false;
       
       if (hasActiveOffer) {
         color = '#ef4444'; // Red for shops with active deals

@@ -96,11 +96,22 @@ const TopLocalPicks = () => {
             </h2>
             <Sparkles className="w-5 h-5 text-primary animate-pulse" />
           </div>
-          {aiInsight && (
-            <p className="text-sm text-muted-foreground/90 max-w-2xl leading-relaxed">
-              {aiInsight}
-            </p>
-          )}
+          <div className="text-sm text-muted-foreground/90 max-w-2xl">
+            <ul className="space-y-1">
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                <span>Best-rated shops nearby</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                <span>Personalized deals & offers</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                <span>Trending in your area</span>
+              </li>
+            </ul>
+          </div>
         </div>
         <Badge 
           variant="outline" 
