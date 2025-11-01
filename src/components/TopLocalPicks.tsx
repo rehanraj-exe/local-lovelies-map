@@ -17,10 +17,30 @@ const TopLocalPicks = () => {
 
   const fetchRecommendations = async () => {
     try {
+      // Get user location if available
+      let userLat = 28.6139;
+      let userLng = 77.2090;
+      
+      if (navigator.geolocation) {
+        try {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject);
+          });
+          userLat = position.coords.latitude;
+          userLng = position.coords.longitude;
+        } catch (geoError) {
+          console.log('Using default location');
+        }
+      }
+
       const { data, error } = await supabase.functions.invoke('generate-recommendations', {
         body: {
-          userLocation: { lat: 28.6139, lng: 77.2090 },
-          userPreferences: {}
+          userLocation: { lat: userLat, lng: userLng },
+          userPreferences: {
+            prioritize: 'rating',
+            includeDeals: true,
+            radius: 5000
+          }
         }
       });
 
@@ -34,6 +54,18 @@ const TopLocalPicks = () => {
       }
     } catch (error) {
       console.error('Error fetching recommendations:', error);
+      // Fallback to fetching top-rated shops directly
+      const { data: fallbackShops } = await supabase
+        .from('shops')
+        .select('*')
+        .eq('verified', true)
+        .order('rating', { ascending: false })
+        .limit(3);
+      
+      if (fallbackShops) {
+        setTopShops(fallbackShops);
+        setAiInsight('Top rated shops in your area');
+      }
     } finally {
       setLoading(false);
     }
