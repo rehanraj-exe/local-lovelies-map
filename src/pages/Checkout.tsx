@@ -43,8 +43,40 @@ const Checkout = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        navigate('/auth');
+        // Redirect to auth with return path
+        navigate('/auth?redirect=/checkout');
         return;
+      }
+
+      // Check for guest cart and migrate it
+      const guestCart = localStorage.getItem('guest_cart');
+      if (guestCart) {
+        const localItems = JSON.parse(guestCart);
+        for (const item of localItems) {
+          const { data: existing } = await supabase
+            .from('cart_items')
+            .select('id, quantity')
+            .eq('user_id', user.id)
+            .eq('product_id', item.product_id)
+            .single();
+
+          if (existing) {
+            await supabase
+              .from('cart_items')
+              .update({ quantity: existing.quantity + item.quantity })
+              .eq('id', existing.id);
+          } else {
+            await supabase
+              .from('cart_items')
+              .insert({
+                user_id: user.id,
+                product_id: item.product_id,
+                shop_id: item.shop_id,
+                quantity: item.quantity
+              });
+          }
+        }
+        localStorage.removeItem('guest_cart');
       }
 
       const { data, error } = await supabase

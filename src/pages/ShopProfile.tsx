@@ -440,37 +440,59 @@ const ShopProfile = () => {
                           <Button 
                             className="w-full" 
                             onClick={async () => {
-                              if (!user) {
-                                toast.error('Please sign in to add items to cart');
-                                navigate('/auth');
-                                return;
-                              }
-                              
                               try {
-                                // Check if item already in cart
-                                const { data: existing } = await supabase
-                                  .from('cart_items')
-                                  .select('id, quantity')
-                                  .eq('user_id', user.id)
-                                  .eq('product_id', product.id)
-                                  .single();
+                                const { data: { user } } = await supabase.auth.getUser();
+                                
+                                if (user) {
+                                  // Logged-in user: save to database
+                                  const { data: existing } = await supabase
+                                    .from('cart_items')
+                                    .select('id, quantity')
+                                    .eq('user_id', user.id)
+                                    .eq('product_id', product.id)
+                                    .single();
 
-                                if (existing) {
-                                  // Update quantity
-                                  await supabase
-                                    .from('cart_items')
-                                    .update({ quantity: existing.quantity + 1 })
-                                    .eq('id', existing.id);
+                                  if (existing) {
+                                    await supabase
+                                      .from('cart_items')
+                                      .update({ quantity: existing.quantity + 1 })
+                                      .eq('id', existing.id);
+                                  } else {
+                                    await supabase
+                                      .from('cart_items')
+                                      .insert({
+                                        user_id: user.id,
+                                        product_id: product.id,
+                                        shop_id: shop.id,
+                                        quantity: 1
+                                      });
+                                  }
                                 } else {
-                                  // Add new item
-                                  await supabase
-                                    .from('cart_items')
-                                    .insert({
-                                      user_id: user.id,
+                                  // Guest user: save to localStorage
+                                  const CART_KEY = 'guest_cart';
+                                  const cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+                                  const existingIndex = cart.findIndex((item: any) => item.product_id === product.id);
+                                  
+                                  if (existingIndex >= 0) {
+                                    cart[existingIndex].quantity += 1;
+                                  } else {
+                                    cart.push({
                                       product_id: product.id,
                                       shop_id: shop.id,
-                                      quantity: 1
+                                      quantity: 1,
+                                      product: {
+                                        id: product.id,
+                                        name: product.name,
+                                        price: product.price,
+                                        image_url: product.image_url
+                                      },
+                                      shop: {
+                                        id: shop.id,
+                                        name: shop.name
+                                      }
                                     });
+                                  }
+                                  localStorage.setItem(CART_KEY, JSON.stringify(cart));
                                 }
                                 
                                 toast.success('Added to cart!');
