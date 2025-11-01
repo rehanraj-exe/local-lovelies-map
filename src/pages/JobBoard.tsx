@@ -91,29 +91,18 @@ const JobBoard = () => {
     }
   };
 
-  // Configure fuzzy search for jobs
-  const fuse = useMemo(() => {
-    return new Fuse(jobs, {
-      keys: ['title', 'shops.name', 'description'],
-      threshold: 0.4,
-      includeScore: true,
-    });
-  }, [jobs]);
-
   const filteredJobs = useMemo(() => {
-    let results = jobs;
+    console.log('Filtering jobs - Total:', jobs.length);
+    console.log('Current filters:', { jobTypeFilter, wageFilter, searchTerm });
+    
+    let results = [...jobs];
 
-    // Apply fuzzy search if there's a search term
-    if (searchTerm.trim()) {
-      const fuseResults = fuse.search(searchTerm);
-      results = fuseResults.map(result => result.item);
-    }
-
-    // Apply filters
-    return results.filter(job => {
-      const matchesJobType = !jobTypeFilter || jobTypeFilter === 'all' || job.job_type === jobTypeFilter;
+    // Apply filters FIRST before search
+    results = results.filter(job => {
+      console.log('Job type:', job.job_type, 'Filter:', jobTypeFilter);
+      const matchesJobType = jobTypeFilter === 'all' || job.job_type === jobTypeFilter;
       
-      const matchesWage = !wageFilter || wageFilter === 'all' || (() => {
+      const matchesWage = wageFilter === 'all' || (() => {
         const wage = job.wage.toLowerCase();
         if (wageFilter === 'low') return wage.includes('300') || wage.includes('5000') || wage.includes('8000');
         if (wageFilter === 'medium') return wage.includes('10000') || wage.includes('15000');
@@ -123,7 +112,23 @@ const JobBoard = () => {
       
       return matchesJobType && matchesWage;
     });
-  }, [jobs, fuse, searchTerm, jobTypeFilter, wageFilter]);
+
+    console.log('After filters:', results.length);
+
+    // Apply fuzzy search if there's a search term
+    if (searchTerm.trim()) {
+      const searchFuse = new Fuse(results, {
+        keys: ['title', 'shops.name', 'description'],
+        threshold: 0.4,
+        includeScore: true,
+      });
+      const fuseResults = searchFuse.search(searchTerm);
+      results = fuseResults.map(result => result.item);
+    }
+
+    console.log('Final results:', results.length);
+    return results;
+  }, [jobs, searchTerm, jobTypeFilter, wageFilter]);
 
   return (
     <div className="min-h-screen bg-background animate-fade-in">

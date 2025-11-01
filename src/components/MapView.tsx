@@ -54,42 +54,43 @@ const MapView = ({ onShopClick, shops = [] }: MapViewProps) => {
       maxZoom: 19,
     }).addTo(map);
 
-    // Create custom icons for different shop types
-    const createCustomIcon = (color: string, hasOffer: boolean) => {
-      const pulseClass = hasOffer ? 'animate-pulse-soft' : '';
+    // Create custom icons for different shop types with prominent colors
+    const createCustomIcon = (color: string, label: string) => {
       return L.divIcon({
         className: 'custom-marker',
         html: `
-          <div class="relative ${pulseClass}">
-            <div class="w-10 h-10 rounded-full shadow-medium flex items-center justify-center" 
-                 style="background-color: ${color}">
-              <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+          <div class="relative animate-bounce-soft">
+            <div class="w-12 h-12 rounded-full shadow-glow flex items-center justify-center border-4 border-white" 
+                 style="background: ${color}; box-shadow: 0 4px 20px ${color}80">
+              <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
               </svg>
             </div>
-            ${hasOffer ? `
-              <div class="absolute -top-1 -right-1 w-5 h-5 bg-success rounded-full border-2 border-white flex items-center justify-center">
-                <span class="text-xs font-bold text-white">%</span>
-              </div>
-            ` : ''}
+            <div class="absolute -bottom-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap bg-background/95 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-bold border-2 shadow-lg" style="border-color: ${color}; color: ${color}">
+              ${label}
+            </div>
           </div>
         `,
-        iconSize: [40, 40],
-        iconAnchor: [20, 40],
+        iconSize: [48, 48],
+        iconAnchor: [24, 48],
       });
     };
 
-    // Add markers for shops with offers check
+    // Add markers for shops with color coding
     shops.forEach((shop) => {
-      const hasOffer = false; // Can be extended later to check offers table
-      const color = hasOffer
-        ? 'hsl(142, 71%, 45%)' // Green for deals
-        : shop.verified
-        ? 'hsl(195, 100%, 47%)' // Blue for verified
-        : 'hsl(38, 92%, 50%)'; // Yellow for normal
+      let color: string;
+      let label: string;
+      
+      if (shop.open_now) {
+        color = '#22c55e'; // Green for open shops
+        label = 'OPEN';
+      } else {
+        color = '#eab308'; // Yellow for closed shops
+        label = 'CLOSED';
+      }
 
       const marker = L.marker([shop.latitude, shop.longitude], {
-        icon: createCustomIcon(color, hasOffer),
+        icon: createCustomIcon(color, label),
       }).addTo(map);
 
       marker.on('click', () => {
@@ -170,16 +171,12 @@ const MapView = ({ onShopClick, shops = [] }: MapViewProps) => {
         </h3>
         <div className="space-y-2 text-xs">
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-full bg-[hsl(142,71%,45%)] border-2 border-white shadow-sm"></div>
-            <span className="font-medium text-foreground">Active Deal</span>
+            <div className="w-6 h-6 rounded-full bg-[#22c55e] border-2 border-white shadow-glow"></div>
+            <span className="font-medium text-foreground">Open Now</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-full bg-[hsl(195,100%,47%)] border-2 border-white shadow-sm"></div>
-            <span className="font-medium text-foreground">Verified Shop</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-full bg-[hsl(38,92%,50%)] border-2 border-white shadow-sm"></div>
-            <span className="font-medium text-foreground">New Shop</span>
+            <div className="w-6 h-6 rounded-full bg-[#eab308] border-2 border-white shadow-glow"></div>
+            <span className="font-medium text-foreground">Currently Closed</span>
           </div>
         </div>
       </div>
