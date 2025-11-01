@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { ArrowLeft } from 'lucide-react';
 import heroImage from '@/assets/hero-town.jpg';
 
 const authSchema = z.object({
@@ -88,6 +89,16 @@ const Auth = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/90 to-background"></div>
       </div>
+
+      {/* Back Button */}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => navigate('/')}
+        className="absolute top-4 left-4 z-20 rounded-full"
+      >
+        <ArrowLeft className="w-5 h-5" />
+      </Button>
 
       <Card className="w-full max-w-md p-8 space-y-6 relative z-10">
         <div className="text-center space-y-2">
