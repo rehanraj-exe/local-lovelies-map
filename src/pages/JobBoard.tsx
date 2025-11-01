@@ -9,9 +9,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
-import { Briefcase, MapPin, DollarSign, Clock, Search, ArrowLeft, Filter } from 'lucide-react';
+import { Briefcase, MapPin, DollarSign, Clock, Search, ArrowLeft, Filter, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
 import { getJobImage } from '@/lib/jobData';
 
 const JobBoard = () => {
@@ -24,7 +25,8 @@ const JobBoard = () => {
   const [applicationMessage, setApplicationMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [jobTypeFilter, setJobTypeFilter] = useState<string>('all');
-  const [wageFilter, setWageFilter] = useState<string>('all');
+  const [salaryRange, setSalaryRange] = useState<[number, number]>([0, 50000]);
+  const [isSalaryFilterActive, setIsSalaryFilterActive] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -91,29 +93,35 @@ const JobBoard = () => {
     }
   };
 
-  const filteredJobs = useMemo(() => {
-    console.log('Filtering jobs - Total:', jobs.length);
-    console.log('Current filters:', { jobTypeFilter, wageFilter, searchTerm });
+  // Helper function to parse wage from text to number
+  const parseWage = (wageText: string): number => {
+    // Extract numbers from wage string (e.g., "₹10,000/month" -> 10000)
+    const numbers = wageText.replace(/[^0-9]/g, '');
+    const wage = parseInt(numbers) || 0;
     
+    // If it's hourly (₹/hr), convert to monthly estimate (assuming 8hrs x 26 days)
+    if (wageText.toLowerCase().includes('/hr') || wageText.toLowerCase().includes('per hour')) {
+      return wage * 8 * 26;
+    }
+    
+    return wage;
+  };
+
+  const filteredJobs = useMemo(() => {
     let results = [...jobs];
 
     // Apply filters FIRST before search
     results = results.filter(job => {
-      console.log('Job type:', job.job_type, 'Filter:', jobTypeFilter);
       const matchesJobType = jobTypeFilter === 'all' || job.job_type === jobTypeFilter;
       
-      const matchesWage = wageFilter === 'all' || (() => {
-        const wage = job.wage.toLowerCase();
-        if (wageFilter === 'low') return wage.includes('300') || wage.includes('5000') || wage.includes('8000');
-        if (wageFilter === 'medium') return wage.includes('10000') || wage.includes('15000');
-        if (wageFilter === 'high') return wage.includes('20000') || parseFloat(wage.replace(/[^0-9]/g, '')) > 20000;
-        return true;
+      // Salary range filter
+      const matchesSalary = !isSalaryFilterActive || (() => {
+        const jobWage = parseWage(job.wage);
+        return jobWage >= salaryRange[0] && jobWage <= salaryRange[1];
       })();
       
-      return matchesJobType && matchesWage;
+      return matchesJobType && matchesSalary;
     });
-
-    console.log('After filters:', results.length);
 
     // Apply fuzzy search if there's a search term
     if (searchTerm.trim()) {
@@ -126,9 +134,8 @@ const JobBoard = () => {
       results = fuseResults.map(result => result.item);
     }
 
-    console.log('Final results:', results.length);
     return results;
-  }, [jobs, searchTerm, jobTypeFilter, wageFilter]);
+  }, [jobs, searchTerm, jobTypeFilter, salaryRange, isSalaryFilterActive]);
 
   return (
     <div className="min-h-screen bg-background animate-fade-in">
@@ -159,41 +166,77 @@ const JobBoard = () => {
               </div>
             </div>
 
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <Input
-                placeholder="Search jobs or shops..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                  placeholder="Search jobs or shops..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              
+              <Select value={jobTypeFilter} onValueChange={setJobTypeFilter}>
+                <SelectTrigger className="w-full md:w-[180px]">
+                  <Filter className="w-4 h-4 mr-2" />
+                  <SelectValue placeholder="Job Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="full-time">Full-time</SelectItem>
+                  <SelectItem value="part-time">Part-time</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            
-            <Select value={jobTypeFilter} onValueChange={setJobTypeFilter}>
-              <SelectTrigger className="w-full md:w-[180px]">
-                <Filter className="w-4 h-4 mr-2" />
-                <SelectValue placeholder="Job Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="full-time">Full-time</SelectItem>
-                <SelectItem value="part-time">Part-time</SelectItem>
-              </SelectContent>
-            </Select>
 
-            <Select value={wageFilter} onValueChange={setWageFilter}>
-              <SelectTrigger className="w-full md:w-[180px]">
-                <DollarSign className="w-4 h-4 mr-2" />
-                <SelectValue placeholder="Pay Range" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Ranges</SelectItem>
-                <SelectItem value="low">₹300-8,000</SelectItem>
-                <SelectItem value="medium">₹10,000-15,000</SelectItem>
-                <SelectItem value="high">₹20,000+</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* Salary Range Filter */}
+            <Card className="p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium">Salary Range</span>
+                </div>
+                {isSalaryFilterActive && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSalaryRange([0, 50000]);
+                      setIsSalaryFilterActive(false);
+                    }}
+                    className="h-7 px-2"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Slider
+                  value={salaryRange}
+                  onValueChange={(value) => {
+                    setSalaryRange(value as [number, number]);
+                    setIsSalaryFilterActive(true);
+                  }}
+                  min={0}
+                  max={50000}
+                  step={1000}
+                  className="w-full"
+                />
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <span>₹{salaryRange[0].toLocaleString()}</span>
+                  <span>₹{salaryRange[1].toLocaleString()}</span>
+                </div>
+              </div>
+              
+              {isSalaryFilterActive && (
+                <Badge variant="secondary" className="text-xs">
+                  Filtered by salary: ₹{salaryRange[0].toLocaleString()}–₹{salaryRange[1].toLocaleString()}
+                </Badge>
+              )}
+            </Card>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
