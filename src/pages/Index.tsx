@@ -25,6 +25,10 @@ const Index = () => {
 
   const categories = ['All', 'Bakery', 'Clothing', 'Grocery', 'Café', 'Bookstore'];
 
+  const filteredShops = selectedCategory === 'All' 
+    ? mockShops 
+    : mockShops.filter((shop) => shop.category === selectedCategory);
+  
   const activeOffers = mockShops.filter((shop) => shop.offer).length;
 
   return (
@@ -103,9 +107,13 @@ const Index = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => navigate('/dashboard')}>
+                      <Store className="w-4 h-4 mr-2" />
+                      My Shop
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate('/register-shop')}>
                       <Store className="w-4 h-4 mr-2" />
-                      Register Shop
+                      Register New Shop
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={signOut}>
                       <LogOut className="w-4 h-4 mr-2" />
@@ -164,12 +172,12 @@ const Index = () => {
 
             {/* Map View */}
             <div className="h-[600px] rounded-2xl overflow-hidden shadow-medium border border-border">
-              <MapView onShopClick={setSelectedShopId} />
+              <MapView onShopClick={setSelectedShopId} shops={filteredShops} />
             </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {mockShops.map((shop) => (
+            {filteredShops.map((shop) => (
               <div
                 key={shop.id}
                 className="bg-card rounded-2xl overflow-hidden shadow-soft hover:shadow-medium transition-all cursor-pointer border border-border"

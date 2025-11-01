@@ -1,28 +1,81 @@
-import { mockShops } from '@/lib/mockData';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Star, MapPin } from 'lucide-react';
+import { Star, MapPin, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const TopLocalPicks = () => {
   const navigate = useNavigate();
-  
-  // Sort by rating and take top 3
-  const topShops = [...mockShops]
-    .sort((a, b) => b.rating - a.rating)
-    .slice(0, 3);
+  const [topShops, setTopShops] = useState<any[]>([]);
+  const [aiInsight, setAiInsight] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchRecommendations();
+  }, []);
+
+  const fetchRecommendations = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-recommendations', {
+        body: {
+          userLocation: { lat: 28.6139, lng: 77.2090 },
+          userPreferences: {}
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.recommendations) {
+        setTopShops(data.recommendations.slice(0, 3));
+      }
+      if (data?.aiInsight) {
+        setAiInsight(data.aiInsight);
+      }
+    } catch (error) {
+      console.error('Error fetching recommendations:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold">✨ Top Local Picks</h2>
+          <Badge variant="outline" className="text-xs">
+            <Sparkles className="w-3 h-3 mr-1" />
+            AI Recommended
+          </Badge>
+        </div>
+        <p className="text-sm text-muted-foreground">Loading recommendations...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">✨ Top Local Picks</h2>
+        <div>
+          <h2 className="text-xl font-bold">✨ Top Local Picks</h2>
+          {aiInsight && (
+            <p className="text-sm text-muted-foreground mt-1">{aiInsight}</p>
+          )}
+        </div>
         <Badge variant="outline" className="text-xs">
+          <Sparkles className="w-3 h-3 mr-1" />
           AI Recommended
         </Badge>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {topShops.map((shop) => (
+        {topShops.length === 0 ? (
+          <p className="col-span-3 text-center text-muted-foreground py-8">
+            No recommendations available at the moment
+          </p>
+        ) : (
+          topShops.map((shop) => (
           <Card
             key={shop.id}
             className="overflow-hidden cursor-pointer hover:shadow-glow transition-all hover:-translate-y-1"
@@ -30,15 +83,10 @@ const TopLocalPicks = () => {
           >
             <div className="relative h-40">
               <img
-                src={shop.image}
+                src={shop.photos?.[0] || '/placeholder.svg'}
                 alt={shop.name}
                 className="w-full h-full object-cover"
               />
-              {shop.offer && (
-                <Badge variant="deal" className="absolute top-2 right-2">
-                  {shop.offer.discount} OFF
-                </Badge>
-              )}
             </div>
             
             <div className="p-4 space-y-2">
@@ -55,7 +103,7 @@ const TopLocalPicks = () => {
               
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <MapPin className="w-3 h-3" />
-                <span>{shop.distance}</span>
+                <span>{shop.address}</span>
               </div>
 
               {shop.verified && (
@@ -65,7 +113,8 @@ const TopLocalPicks = () => {
               )}
             </div>
           </Card>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );

@@ -117,7 +117,7 @@ export const mockShops: Shop[] = [
     rating: 4.7,
     reviewCount: 156,
     distance: '0.9 km',
-    image: '/src/assets/shop-bakery.jpg',
+    image: '/src/assets/shop-cafe.jpg',
     verified: true,
     hours: '8:00 AM - 11:00 PM',
     phone: '+91 98765 43213',
@@ -133,7 +133,7 @@ export const mockShops: Shop[] = [
     rating: 4.9,
     reviewCount: 203,
     distance: '1.0 km',
-    image: '/src/assets/shop-clothing.jpg',
+    image: '/src/assets/shop-bookstore.jpg',
     verified: true,
     offer: {
       title: 'Buy 3 Books, Get 15% Off',

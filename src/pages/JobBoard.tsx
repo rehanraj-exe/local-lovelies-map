@@ -8,8 +8,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
-import { Briefcase, MapPin, DollarSign, Clock, Search } from 'lucide-react';
+import { Briefcase, MapPin, DollarSign, Clock, Search, ArrowLeft, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const JobBoard = () => {
   const { user } = useAuth();
@@ -20,6 +21,8 @@ const JobBoard = () => {
   const [applyDialogOpen, setApplyDialogOpen] = useState(false);
   const [applicationMessage, setApplicationMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [jobTypeFilter, setJobTypeFilter] = useState<string>('all');
+  const [wageFilter, setWageFilter] = useState<string>('all');
 
   useEffect(() => {
     fetchJobs();
@@ -82,30 +85,79 @@ const JobBoard = () => {
     }
   };
 
-  const filteredJobs = jobs.filter(job =>
-    job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    job.shops?.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredJobs = jobs.filter(job => {
+    const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.shops?.name.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesJobType = jobTypeFilter === 'all' || job.job_type === jobTypeFilter;
+    
+    const matchesWage = wageFilter === 'all' || (() => {
+      const wage = job.wage.toLowerCase();
+      if (wageFilter === 'low') return wage.includes('300') || wage.includes('5000') || wage.includes('8000');
+      if (wageFilter === 'medium') return wage.includes('10000') || wage.includes('15000');
+      if (wageFilter === 'high') return wage.includes('20000') || parseFloat(wage.replace(/[^0-9]/g, '')) > 20000;
+      return true;
+    })();
+    
+    return matchesSearch && matchesJobType && matchesWage;
+  });
 
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         <div className="space-y-6">
-          <div className="space-y-2">
-            <h1 className="text-4xl font-bold">Local Job Board</h1>
-            <p className="text-muted-foreground">
-              Find part-time and full-time opportunities in your community
-            </p>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => navigate('/')}
+              className="rounded-full"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div className="space-y-2">
+              <h1 className="text-4xl font-bold">Local Job Board</h1>
+              <p className="text-muted-foreground">
+                Find part-time and full-time opportunities in your community
+              </p>
+            </div>
           </div>
 
-          <div className="relative">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <Input
-              placeholder="Search jobs or shops..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+              <Input
+                placeholder="Search jobs or shops..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            
+            <Select value={jobTypeFilter} onValueChange={setJobTypeFilter}>
+              <SelectTrigger className="w-full md:w-[180px]">
+                <Filter className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="Job Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="Full-time">Full-time</SelectItem>
+                <SelectItem value="Part-time">Part-time</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={wageFilter} onValueChange={setWageFilter}>
+              <SelectTrigger className="w-full md:w-[180px]">
+                <DollarSign className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="Pay Range" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Ranges</SelectItem>
+                <SelectItem value="low">₹300-8,000</SelectItem>
+                <SelectItem value="medium">₹10,000-15,000</SelectItem>
+                <SelectItem value="high">₹20,000+</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { mockShops } from '@/lib/mockData';
+import { mockShops, Shop } from '@/lib/mockData';
 
 // Fix for default marker icons in Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -13,9 +13,10 @@ L.Icon.Default.mergeOptions({
 
 interface MapViewProps {
   onShopClick: (shopId: string) => void;
+  shops?: Shop[];
 }
 
-const MapView = ({ onShopClick }: MapViewProps) => {
+const MapView = ({ onShopClick, shops = mockShops }: MapViewProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
 
@@ -58,7 +59,7 @@ const MapView = ({ onShopClick }: MapViewProps) => {
     };
 
     // Add markers for shops
-    mockShops.forEach((shop) => {
+    shops.forEach((shop) => {
       const color = shop.offer
         ? 'hsl(142, 71%, 45%)' // Green for deals
         : shop.verified
@@ -87,7 +88,7 @@ const MapView = ({ onShopClick }: MapViewProps) => {
         mapInstanceRef.current = null;
       }
     };
-  }, [onShopClick]);
+  }, [onShopClick, shops]);
 
   return (
     <div className="relative w-full h-full">
