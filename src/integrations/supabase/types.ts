@@ -181,6 +181,53 @@ export type Database = {
           },
         ]
       }
+      products: {
+        Row: {
+          created_at: string
+          description: string | null
+          featured: boolean | null
+          id: string
+          image_url: string | null
+          in_stock: boolean | null
+          name: string
+          price: number
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          featured?: boolean | null
+          id?: string
+          image_url?: string | null
+          in_stock?: boolean | null
+          name: string
+          price: number
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          featured?: boolean | null
+          id?: string
+          image_url?: string | null
+          in_stock?: boolean | null
+          name?: string
+          price?: number
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           bio: string | null
@@ -267,12 +314,14 @@ export type Database = {
           longitude: number
           menu_items: Json | null
           name: string
+          open_now: boolean | null
           owner_id: string
           phone: string
           photos: string[] | null
           rating: number | null
           review_count: number | null
           social_links: Json | null
+          subcategory: string | null
           tags: string[] | null
           updated_at: string
           verified: boolean | null
@@ -291,12 +340,14 @@ export type Database = {
           longitude: number
           menu_items?: Json | null
           name: string
+          open_now?: boolean | null
           owner_id: string
           phone: string
           photos?: string[] | null
           rating?: number | null
           review_count?: number | null
           social_links?: Json | null
+          subcategory?: string | null
           tags?: string[] | null
           updated_at?: string
           verified?: boolean | null
@@ -315,12 +366,14 @@ export type Database = {
           longitude?: number
           menu_items?: Json | null
           name?: string
+          open_now?: boolean | null
           owner_id?: string
           phone?: string
           photos?: string[] | null
           rating?: number | null
           review_count?: number | null
           social_links?: Json | null
+          subcategory?: string | null
           tags?: string[] | null
           updated_at?: string
           verified?: boolean | null
