@@ -247,7 +247,7 @@ const Index = () => {
             <TopLocalPicks />
 
             {/* Map View */}
-            <div className="relative h-[600px] mb-24 rounded-2xl overflow-hidden shadow-medium border border-border z-0">
+            <div className="relative h-[600px] mb-24 rounded-2xl shadow-medium border border-border z-0">
               <MapView 
                 shops={filteredShops} 
                 onShopClick={(shopId) => navigate(`/shop/${shopId}`)}
