@@ -7,10 +7,11 @@ import TopLocalPicks from '@/components/TopLocalPicks';
 import { AIChatAssistant } from '@/components/AIChatAssistant';
 import { DiscountCarousel } from '@/components/DiscountCarousel';
 import { SearchResults } from '@/components/SearchResults';
+import { Cart } from '@/components/Cart';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, User, Grid, Map, Briefcase, Store, LogOut, Clock, Filter } from 'lucide-react';
+import { Search, User, Grid, Map, Briefcase, Store, LogOut, Clock, Filter, Package } from 'lucide-react';
 import heroImage from '@/assets/hero-town.jpg';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -174,6 +175,8 @@ const Index = () => {
 
             {/* Actions */}
             <div className="flex gap-2">
+              <Cart />
+              
               <Button
                 variant="outline"
                 size="sm"
@@ -192,6 +195,10 @@ const Index = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => navigate('/orders')}>
+                      <Package className="w-4 h-4 mr-2" />
+                      My Orders
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate('/dashboard')}>
                       <Store className="w-4 h-4 mr-2" />
                       My Shop

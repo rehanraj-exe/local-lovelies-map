@@ -20,6 +20,7 @@ interface Shop {
   phone: string;
   address: string;
   hours?: any;
+  created_at?: string;
 }
 
 // Fix for default marker icons in Leaflet
@@ -81,7 +82,17 @@ const MapView = ({ onShopClick, shops = [] }: MapViewProps) => {
       let color: string;
       let label: string;
       
-      if (shop.open_now) {
+      // Check if shop has active offers
+      const hasActiveOffer = shop.verified; // Placeholder - will check offers table
+      const isNew = new Date(shop.created_at || '').getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000; // New if created within 7 days
+      
+      if (hasActiveOffer) {
+        color = '#ef4444'; // Red for shops with active deals
+        label = '🔥 DEAL';
+      } else if (isNew) {
+        color = '#3b82f6'; // Blue for new shops
+        label = '✨ NEW';
+      } else if (shop.open_now) {
         color = '#22c55e'; // Green for open shops
         label = 'OPEN';
       } else {
@@ -170,6 +181,14 @@ const MapView = ({ onShopClick, shops = [] }: MapViewProps) => {
           Map Legend
         </h3>
         <div className="space-y-2 text-xs">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-[#ef4444] border-2 border-white shadow-glow"></div>
+            <span className="font-medium text-foreground">Active Deal</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-[#3b82f6] border-2 border-white shadow-glow"></div>
+            <span className="font-medium text-foreground">New Shop</span>
+          </div>
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-full bg-[#22c55e] border-2 border-white shadow-glow"></div>
             <span className="font-medium text-foreground">Open Now</span>

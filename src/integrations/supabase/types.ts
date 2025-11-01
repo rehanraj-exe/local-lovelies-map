@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      cart_items: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          quantity: number
+          shop_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          quantity?: number
+          shop_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          quantity?: number
+          shop_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cart_items_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       favorites: {
         Row: {
           created_at: string
@@ -174,6 +219,95 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "offers_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_items: {
+        Row: {
+          created_at: string
+          id: string
+          order_id: string
+          price: number
+          product_id: string
+          quantity: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          order_id: string
+          price: number
+          product_id: string
+          quantity: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          order_id?: string
+          price?: number
+          product_id?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string
+          delivery_address: string
+          delivery_notes: string | null
+          delivery_phone: string
+          id: string
+          shop_id: string
+          status: string
+          total_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_address: string
+          delivery_notes?: string | null
+          delivery_phone: string
+          id?: string
+          shop_id: string
+          status?: string
+          total_amount: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          delivery_address?: string
+          delivery_notes?: string | null
+          delivery_phone?: string
+          id?: string
+          shop_id?: string
+          status?: string
+          total_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"

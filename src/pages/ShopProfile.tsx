@@ -431,12 +431,58 @@ const ShopProfile = () => {
                           {product.description && (
                             <p className="text-sm text-muted-foreground mb-3">{product.description}</p>
                           )}
-                          <div className="flex items-center justify-between">
+                          <div className="flex items-center justify-between mb-3">
                             <span className="text-lg font-bold text-primary">₹{product.price}</span>
                             {product.featured && (
                               <Badge variant="default">Featured</Badge>
                             )}
                           </div>
+                          <Button 
+                            className="w-full" 
+                            onClick={async () => {
+                              if (!user) {
+                                toast.error('Please sign in to add items to cart');
+                                navigate('/auth');
+                                return;
+                              }
+                              
+                              try {
+                                // Check if item already in cart
+                                const { data: existing } = await supabase
+                                  .from('cart_items')
+                                  .select('id, quantity')
+                                  .eq('user_id', user.id)
+                                  .eq('product_id', product.id)
+                                  .single();
+
+                                if (existing) {
+                                  // Update quantity
+                                  await supabase
+                                    .from('cart_items')
+                                    .update({ quantity: existing.quantity + 1 })
+                                    .eq('id', existing.id);
+                                } else {
+                                  // Add new item
+                                  await supabase
+                                    .from('cart_items')
+                                    .insert({
+                                      user_id: user.id,
+                                      product_id: product.id,
+                                      shop_id: shop.id,
+                                      quantity: 1
+                                    });
+                                }
+                                
+                                toast.success('Added to cart!');
+                              } catch (error) {
+                                console.error('Error adding to cart:', error);
+                                toast.error('Failed to add to cart');
+                              }
+                            }}
+                            disabled={!product.in_stock}
+                          >
+                            {product.in_stock ? 'Add to Cart' : 'Out of Stock'}
+                          </Button>
                         </div>
                       </Card>
                     ))}

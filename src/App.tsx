@@ -11,6 +11,8 @@ import ShopRegistration from "./pages/ShopRegistration";
 import JobBoard from "./pages/JobBoard";
 import ShopDashboard from "./pages/ShopDashboard";
 import JobApplications from "./pages/JobApplications";
+import Checkout from "./pages/Checkout";
+import Orders from "./pages/Orders";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +30,8 @@ const App = () => (
           <Route path="/dashboard" element={<ShopDashboard />} />
           <Route path="/jobs" element={<JobBoard />} />
           <Route path="/applications" element={<JobApplications />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/orders" element={<Orders />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
