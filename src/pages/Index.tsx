@@ -6,6 +6,7 @@ import ShopQuickView from '@/components/ShopQuickView';
 import TopLocalPicks from '@/components/TopLocalPicks';
 import { AIChatAssistant } from '@/components/AIChatAssistant';
 import { DiscountCarousel } from '@/components/DiscountCarousel';
+import { SearchResults } from '@/components/SearchResults';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -255,6 +256,9 @@ const Index = () => {
           <div className="flex items-center justify-center h-96">
             <div className="text-muted-foreground">Loading shops...</div>
           </div>
+        ) : searchQuery.trim() ? (
+          /* Search Results View */
+          <SearchResults shops={filteredShops} searchQuery={searchQuery} />
         ) : viewMode === 'map' ? (
           <div className="space-y-6">
             {/* Discount Carousel */}
