@@ -163,7 +163,7 @@ const MapView = ({ onShopClick, shops = [] }: MapViewProps) => {
       <div ref={mapRef} className="w-full h-full rounded-2xl overflow-hidden shadow-medium" />
       
       {/* Map Legend */}
-      <div className="absolute bottom-6 left-6 bg-card/95 backdrop-blur-sm p-4 rounded-2xl shadow-glow border-2 border-primary/20 z-50">
+      <div className="absolute bottom-6 left-6 bg-card/95 backdrop-blur-sm p-4 rounded-2xl shadow-glow border-2 border-primary/20" style={{ zIndex: 1000 }}>
         <h3 className="text-sm font-bold mb-3 flex items-center gap-2 text-foreground">
           <MapPin className="w-4 h-4 text-primary" />
           Map Legend
@@ -186,7 +186,8 @@ const MapView = ({ onShopClick, shops = [] }: MapViewProps) => {
 
       {/* Recenter Button with glow effect */}
       <button 
-        className={`absolute top-6 right-6 bg-card/95 backdrop-blur-sm p-3 rounded-full shadow-glow border-2 border-primary/20 hover:bg-primary/10 transition-all z-50 ${isNearbyMode ? 'shadow-glow animate-pulse-soft' : ''}`}
+        className={`absolute top-6 right-6 bg-card/95 backdrop-blur-sm p-3 rounded-full shadow-glow border-2 border-primary/20 hover:bg-primary/10 transition-all ${isNearbyMode ? 'shadow-glow animate-pulse-soft' : ''}`}
+        style={{ zIndex: 1000 }}
         onClick={() => {
           if (mapInstanceRef.current) {
             mapInstanceRef.current.setView([28.6139, 77.2090], 14);
@@ -199,7 +200,8 @@ const MapView = ({ onShopClick, shops = [] }: MapViewProps) => {
       {/* Explore Nearby Floating Button */}
       <Button
         onClick={recenterToUserLocation}
-        className="absolute bottom-6 right-6 rounded-full shadow-glow hover:shadow-xl hover:scale-105 transition-all z-50 bg-primary text-primary-foreground font-semibold"
+        className="absolute bottom-6 right-6 rounded-full shadow-glow hover:shadow-xl hover:scale-105 transition-all bg-primary text-primary-foreground font-semibold"
+        style={{ zIndex: 1000 }}
         size="lg"
       >
         <Navigation className="w-5 h-5 mr-2" />
