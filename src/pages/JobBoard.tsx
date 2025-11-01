@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import Fuse from 'fuse.js';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -90,22 +91,39 @@ const JobBoard = () => {
     }
   };
 
-  const filteredJobs = jobs.filter(job => {
-    const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.shops?.name.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesJobType = !jobTypeFilter || jobTypeFilter === 'all' || job.job_type === jobTypeFilter;
-    
-    const matchesWage = !wageFilter || wageFilter === 'all' || (() => {
-      const wage = job.wage.toLowerCase();
-      if (wageFilter === 'low') return wage.includes('300') || wage.includes('5000') || wage.includes('8000');
-      if (wageFilter === 'medium') return wage.includes('10000') || wage.includes('15000');
-      if (wageFilter === 'high') return wage.includes('20000') || parseFloat(wage.replace(/[^0-9]/g, '')) > 20000;
-      return true;
-    })();
-    
-    return matchesSearch && matchesJobType && matchesWage;
-  });
+  // Configure fuzzy search for jobs
+  const fuse = useMemo(() => {
+    return new Fuse(jobs, {
+      keys: ['title', 'shops.name', 'description'],
+      threshold: 0.4,
+      includeScore: true,
+    });
+  }, [jobs]);
+
+  const filteredJobs = useMemo(() => {
+    let results = jobs;
+
+    // Apply fuzzy search if there's a search term
+    if (searchTerm.trim()) {
+      const fuseResults = fuse.search(searchTerm);
+      results = fuseResults.map(result => result.item);
+    }
+
+    // Apply filters
+    return results.filter(job => {
+      const matchesJobType = !jobTypeFilter || jobTypeFilter === 'all' || job.job_type === jobTypeFilter;
+      
+      const matchesWage = !wageFilter || wageFilter === 'all' || (() => {
+        const wage = job.wage.toLowerCase();
+        if (wageFilter === 'low') return wage.includes('300') || wage.includes('5000') || wage.includes('8000');
+        if (wageFilter === 'medium') return wage.includes('10000') || wage.includes('15000');
+        if (wageFilter === 'high') return wage.includes('20000') || parseFloat(wage.replace(/[^0-9]/g, '')) > 20000;
+        return true;
+      })();
+      
+      return matchesJobType && matchesWage;
+    });
+  }, [jobs, fuse, searchTerm, jobTypeFilter, wageFilter]);
 
   return (
     <div className="min-h-screen bg-background animate-fade-in">

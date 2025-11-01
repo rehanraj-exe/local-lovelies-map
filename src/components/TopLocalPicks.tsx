@@ -89,15 +89,25 @@ const TopLocalPicks = () => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold">✨ Top Local Picks</h2>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              Top Local Picks
+            </h2>
+            <Sparkles className="w-5 h-5 text-primary animate-pulse" />
+          </div>
           {aiInsight && (
-            <p className="text-sm text-muted-foreground mt-1">{aiInsight}</p>
+            <p className="text-sm text-muted-foreground/90 max-w-2xl leading-relaxed">
+              {aiInsight}
+            </p>
           )}
         </div>
-        <Badge variant="outline" className="text-xs">
-          <Sparkles className="w-3 h-3 mr-1" />
-          AI Recommended
+        <Badge 
+          variant="outline" 
+          className="text-xs bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20 text-primary font-semibold px-3 py-1.5 hover:shadow-glow transition-all"
+        >
+          <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+          AI Powered
         </Badge>
       </div>
 

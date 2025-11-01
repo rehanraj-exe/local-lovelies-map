@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Fuse from 'fuse.js';
 import MapView from '@/components/MapView';
 import ShopQuickView from '@/components/ShopQuickView';
 import TopLocalPicks from '@/components/TopLocalPicks';
@@ -70,19 +71,33 @@ const Index = () => {
   // Get unique categories from shops
   const categories = ['All', ...Array.from(new Set(shops.map(shop => shop.category)))];
 
-  // Filter shops based on category, search, and open status with memoization
+  // Configure fuzzy search
+  const fuse = useMemo(() => {
+    return new Fuse(shops, {
+      keys: ['name', 'category', 'subcategory', 'address', 'description'],
+      threshold: 0.4, // 0 = perfect match, 1 = match anything
+      includeScore: true,
+    });
+  }, [shops]);
+
+  // Filter shops based on category, search, and open status with fuzzy matching
   const filteredShops = useMemo(() => {
-    return shops.filter((shop) => {
+    let results = shops;
+
+    // Apply fuzzy search if there's a search query
+    if (searchQuery.trim()) {
+      const fuseResults = fuse.search(searchQuery);
+      results = fuseResults.map(result => result.item);
+    }
+
+    // Apply other filters
+    return results.filter((shop) => {
       const matchesCategory = selectedCategory === 'All' || shop.category === selectedCategory;
-      const matchesSearch = searchQuery === '' || 
-        shop.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        shop.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        shop.subcategory?.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesOpenStatus = !showOpenOnly || shop.open_now;
       
-      return matchesCategory && matchesSearch && matchesOpenStatus;
+      return matchesCategory && matchesOpenStatus;
     });
-  }, [shops, selectedCategory, searchQuery, showOpenOnly]);
+  }, [shops, fuse, selectedCategory, searchQuery, showOpenOnly]);
 
   // Count active offers (you can fetch this from offers table later)
   const activeOffers = 0; // Placeholder for now
