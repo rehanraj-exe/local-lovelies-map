@@ -4,6 +4,7 @@ import MapView from '@/components/MapView';
 import ShopQuickView from '@/components/ShopQuickView';
 import TopLocalPicks from '@/components/TopLocalPicks';
 import { AIChatAssistant } from '@/components/AIChatAssistant';
+import { DiscountCarousel } from '@/components/DiscountCarousel';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -239,11 +240,14 @@ const Index = () => {
           </div>
         ) : viewMode === 'map' ? (
           <div className="space-y-6">
+            {/* Discount Carousel */}
+            <DiscountCarousel />
+
             {/* Top Local Picks */}
             <TopLocalPicks />
 
             {/* Map View */}
-            <div className="relative h-[600px] rounded-2xl overflow-hidden shadow-medium border border-border z-0">
+            <div className="relative h-[600px] mb-24 rounded-2xl overflow-hidden shadow-medium border border-border z-0">
               <MapView 
                 shops={filteredShops} 
                 onShopClick={(shopId) => navigate(`/shop/${shopId}`)}

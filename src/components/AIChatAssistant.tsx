@@ -103,13 +103,15 @@ export const AIChatAssistant = () => {
               <Sparkles className="w-5 h-5" />
               <h3 className="font-semibold">Re:Local Assistant</h3>
             </div>
-            <button
+            <Button
               onClick={() => setIsOpen(false)}
-              className="hover:bg-primary-foreground/20 rounded-full p-1 transition-colors"
+              variant="ghost"
+              size="icon"
+              className="hover:bg-primary-foreground/20 text-primary-foreground"
               aria-label="Close chat"
             >
               <X className="w-5 h-5" />
-            </button>
+            </Button>
           </div>
 
           {/* Messages */}
