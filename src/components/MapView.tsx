@@ -163,30 +163,30 @@ const MapView = ({ onShopClick, shops = [] }: MapViewProps) => {
       <div ref={mapRef} className="w-full h-full rounded-2xl overflow-hidden shadow-medium" />
       
       {/* Map Legend */}
-      <div className="absolute bottom-6 left-6 bg-card p-4 rounded-2xl shadow-medium border border-border z-50">
-        <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+      <div className="absolute bottom-6 left-6 bg-card/95 backdrop-blur-sm p-4 rounded-2xl shadow-glow border-2 border-primary/20 z-50">
+        <h3 className="text-sm font-bold mb-3 flex items-center gap-2 text-foreground">
           <MapPin className="w-4 h-4 text-primary" />
           Map Legend
         </h3>
         <div className="space-y-2 text-xs">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-[hsl(142,71%,45%)] border border-border"></div>
-            <span className="text-muted-foreground">Active Deal</span>
+            <div className="w-5 h-5 rounded-full bg-[hsl(142,71%,45%)] border-2 border-white shadow-sm"></div>
+            <span className="font-medium text-foreground">Active Deal</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-[hsl(195,100%,47%)] border border-border"></div>
-            <span className="text-muted-foreground">Verified Shop</span>
+            <div className="w-5 h-5 rounded-full bg-[hsl(195,100%,47%)] border-2 border-white shadow-sm"></div>
+            <span className="font-medium text-foreground">Verified Shop</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-[hsl(38,92%,50%)] border border-border"></div>
-            <span className="text-muted-foreground">New Shop</span>
+            <div className="w-5 h-5 rounded-full bg-[hsl(38,92%,50%)] border-2 border-white shadow-sm"></div>
+            <span className="font-medium text-foreground">New Shop</span>
           </div>
         </div>
       </div>
 
       {/* Recenter Button with glow effect */}
       <button 
-        className={`absolute top-6 right-6 bg-card p-3 rounded-full shadow-medium border border-border hover:bg-accent transition-all z-50 ${isNearbyMode ? 'shadow-glow animate-pulse-soft' : ''}`}
+        className={`absolute top-6 right-6 bg-card/95 backdrop-blur-sm p-3 rounded-full shadow-glow border-2 border-primary/20 hover:bg-primary/10 transition-all z-50 ${isNearbyMode ? 'shadow-glow animate-pulse-soft' : ''}`}
         onClick={() => {
           if (mapInstanceRef.current) {
             mapInstanceRef.current.setView([28.6139, 77.2090], 14);
@@ -199,7 +199,7 @@ const MapView = ({ onShopClick, shops = [] }: MapViewProps) => {
       {/* Explore Nearby Floating Button */}
       <Button
         onClick={recenterToUserLocation}
-        className="absolute bottom-6 right-6 rounded-full shadow-glow hover:shadow-xl transition-all animate-bounce-subtle z-50"
+        className="absolute bottom-6 right-6 rounded-full shadow-glow hover:shadow-xl hover:scale-105 transition-all z-50 bg-primary text-primary-foreground font-semibold"
         size="lg"
       >
         <Navigation className="w-5 h-5 mr-2" />
