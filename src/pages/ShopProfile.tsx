@@ -134,6 +134,9 @@ const ShopProfile = () => {
         if (productsData) setProducts(productsData);
         if (offersData) setOffers(offersData);
         if (reviewsData) setReviews(reviewsData as Review[]);
+
+        // Track shop view for analytics
+        await supabase.rpc('track_shop_view', { shop_uuid: id });
       } catch (error) {
         console.error('Error fetching shop data:', error);
         toast.error('Failed to load shop data');
@@ -199,8 +202,20 @@ const ShopProfile = () => {
 
   const openDirections = () => {
     if (shop) {
+      // Track click for analytics
+      supabase.rpc('track_shop_click', { shop_uuid: shop.id });
+      
       const url = `https://www.google.com/maps/dir/?api=1&destination=${shop.latitude},${shop.longitude}`;
       window.open(url, '_blank');
+    }
+  };
+
+  const handleCallClick = () => {
+    if (shop) {
+      // Track click for analytics
+      supabase.rpc('track_shop_click', { shop_uuid: shop.id });
+      
+      window.location.href = `tel:${shop.phone}`;
     }
   };
 
@@ -335,7 +350,7 @@ const ShopProfile = () => {
 
             {/* Action Buttons */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-4">
-              <Button className="bg-primary hover:bg-primary/90">
+              <Button className="bg-primary hover:bg-primary/90" onClick={handleCallClick}>
                 <Phone className="w-4 h-4 mr-2" />
                 Call
               </Button>

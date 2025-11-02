@@ -445,6 +445,47 @@ export type Database = {
           },
         ]
       }
+      shop_analytics: {
+        Row: {
+          clicks: number | null
+          created_at: string
+          date: string
+          id: string
+          offer_redemptions: number | null
+          shop_id: string
+          updated_at: string
+          views: number | null
+        }
+        Insert: {
+          clicks?: number | null
+          created_at?: string
+          date?: string
+          id?: string
+          offer_redemptions?: number | null
+          shop_id: string
+          updated_at?: string
+          views?: number | null
+        }
+        Update: {
+          clicks?: number | null
+          created_at?: string
+          date?: string
+          id?: string
+          offer_redemptions?: number | null
+          shop_id?: string
+          updated_at?: string
+          views?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_analytics_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shops: {
         Row: {
           address: string
@@ -640,6 +681,8 @@ export type Database = {
         }
         Returns: boolean
       }
+      track_shop_click: { Args: { shop_uuid: string }; Returns: undefined }
+      track_shop_view: { Args: { shop_uuid: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "shop_owner" | "delivery_partner" | "user"
