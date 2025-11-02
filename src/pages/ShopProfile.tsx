@@ -134,7 +134,10 @@ const ShopProfile = () => {
         setShop(shopData);
         if (productsData) setProducts(productsData);
         if (offersData) setOffers(offersData);
-        if (reviewsData) setReviews(reviewsData as Review[]);
+        if (reviewsData) {
+          console.log('Reviews fetched:', reviewsData);
+          setReviews(reviewsData as Review[]);
+        }
 
         // Track shop view for analytics
         await supabase.rpc('track_shop_view', { shop_uuid: id });
@@ -667,7 +670,9 @@ const ShopProfile = () => {
                             />
                           ))}
                         </div>
-                        <p className="text-sm text-muted-foreground">{reviews.length} reviews</p>
+                        <p className="text-sm text-muted-foreground">
+                          {reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -687,6 +692,7 @@ const ShopProfile = () => {
                             {[1, 2, 3, 4, 5].map((star) => (
                               <button
                                 key={star}
+                                type="button"
                                 onClick={() => setNewReview({ ...newReview, rating: star })}
                                 className="transition-transform hover:scale-110"
                               >
@@ -725,10 +731,10 @@ const ShopProfile = () => {
                 ) : (
                   <div className="space-y-4">
                     {reviews.map((review) => (
-                      <Card key={review.id} className="p-4">
+                      <Card key={review.id} className="p-4 hover:shadow-md transition-shadow">
                         <div className="flex items-start gap-3">
-                          <Avatar>
-                            <AvatarFallback className="bg-primary/10 text-primary">
+                          <Avatar className="w-10 h-10">
+                            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                               {review.profiles?.full_name?.[0]?.toUpperCase() || 'U'}
                             </AvatarFallback>
                           </Avatar>
@@ -736,7 +742,7 @@ const ShopProfile = () => {
                             <div className="flex items-center justify-between mb-2">
                               <div>
                                 <p className="font-semibold">{review.profiles?.full_name || 'Anonymous'}</p>
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-1 mt-1">
                                   {[1, 2, 3, 4, 5].map((star) => (
                                     <Star
                                       key={star}
@@ -754,7 +760,7 @@ const ShopProfile = () => {
                               </span>
                             </div>
                             {review.comment && (
-                              <p className="text-sm text-muted-foreground">{review.comment}</p>
+                              <p className="text-sm text-foreground/80 mt-2">{review.comment}</p>
                             )}
                           </div>
                         </div>
