@@ -43,13 +43,18 @@ const ShopDashboard = () => {
       .from('shops')
       .select('*')
       .eq('owner_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (shopError) {
-      if (shopError.code === 'PGRST116') {
-        toast.error('No shop found. Please register your shop first.');
-        navigate('/register-shop');
-      }
+      console.error('Error fetching shop:', shopError);
+      toast.error('Failed to load shop data');
+      setLoading(false);
+      return;
+    }
+
+    if (!shopData) {
+      toast.error('No shop found. Please register your shop first.');
+      navigate('/register-shop');
       setLoading(false);
       return;
     }
@@ -293,32 +298,47 @@ const ShopDashboard = () => {
 
           {/* Analytics Dashboard */}
           {analytics && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="p-6">
-                <div className="flex items-center gap-3 mb-2">
-                  <Eye className="w-5 h-5 text-primary" />
-                  <h3 className="font-semibold">Total Views</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in">
+              <Card className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800 hover:shadow-lg transition-all">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">
+                      <Eye className="w-5 h-5 text-white" />
+                    </div>
+                    <h3 className="font-semibold">Total Views</h3>
+                  </div>
+                  <TrendingUp className="w-5 h-5 text-blue-600" />
                 </div>
-                <p className="text-3xl font-bold">{analytics.totalViews}</p>
-                <p className="text-sm text-muted-foreground mt-1">Last 7 days</p>
+                <p className="text-4xl font-bold text-blue-600 dark:text-blue-400">{analytics.totalViews}</p>
+                <p className="text-sm text-blue-600/80 dark:text-blue-400/80 mt-1">Last 7 days</p>
               </Card>
 
-              <Card className="p-6">
-                <div className="flex items-center gap-3 mb-2">
-                  <MousePointer className="w-5 h-5 text-primary" />
-                  <h3 className="font-semibold">Profile Clicks</h3>
+              <Card className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border-purple-200 dark:border-purple-800 hover:shadow-lg transition-all">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center">
+                      <MousePointer className="w-5 h-5 text-white" />
+                    </div>
+                    <h3 className="font-semibold">Profile Clicks</h3>
+                  </div>
+                  <TrendingUp className="w-5 h-5 text-purple-600" />
                 </div>
-                <p className="text-3xl font-bold">{analytics.totalClicks}</p>
-                <p className="text-sm text-muted-foreground mt-1">Last 7 days</p>
+                <p className="text-4xl font-bold text-purple-600 dark:text-purple-400">{analytics.totalClicks}</p>
+                <p className="text-sm text-purple-600/80 dark:text-purple-400/80 mt-1">Last 7 days</p>
               </Card>
 
-              <Card className="p-6">
-                <div className="flex items-center gap-3 mb-2">
-                  <TrendingUp className="w-5 h-5 text-primary" />
-                  <h3 className="font-semibold">Offer Redemptions</h3>
+              <Card className="p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200 dark:border-green-800 hover:shadow-lg transition-all">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
+                      <TrendingUp className="w-5 h-5 text-white" />
+                    </div>
+                    <h3 className="font-semibold">Offer Redemptions</h3>
+                  </div>
+                  <TrendingUp className="w-5 h-5 text-green-600" />
                 </div>
-                <p className="text-3xl font-bold">{analytics.totalRedemptions}</p>
-                <p className="text-sm text-muted-foreground mt-1">Last 7 days</p>
+                <p className="text-4xl font-bold text-green-600 dark:text-green-400">{analytics.totalRedemptions}</p>
+                <p className="text-sm text-green-600/80 dark:text-green-400/80 mt-1">Last 7 days</p>
               </Card>
             </div>
           )}
@@ -427,11 +447,41 @@ const ShopDashboard = () => {
                         id="image_url"
                         name="image_url"
                         defaultValue={editingProduct?.image_url}
-                        placeholder="https://example.com/image.jpg"
+                        placeholder="https://example.com/image.jpg or https://images.unsplash.com/..."
                       />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Paste a direct image URL (jpg, png, webp)
-                      </p>
+                      <div className="mt-2 space-y-1">
+                        <p className="text-xs text-muted-foreground">
+                          Paste a direct image URL (jpg, png, webp) or use a free image from:
+                        </p>
+                        <div className="flex gap-2 text-xs">
+                          <a 
+                            href="https://unsplash.com" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline"
+                          >
+                            Unsplash
+                          </a>
+                          <span>•</span>
+                          <a 
+                            href="https://pixabay.com" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline"
+                          >
+                            Pixabay
+                          </a>
+                          <span>•</span>
+                          <a 
+                            href="https://pexels.com" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline"
+                          >
+                            Pexels
+                          </a>
+                        </div>
+                      </div>
                     </div>
 
                     <Button type="submit" className="w-full">
