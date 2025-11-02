@@ -116,7 +116,7 @@ const Wallet = () => {
         .from("transactions")
         .insert({
           user_id: user.id,
-          shop_id: "00000000-0000-0000-0000-000000000000",
+          shop_id: null, // Wallet top-ups are not linked to any shop
           amount: amountValue,
           payment_method: "upi",
           status: "pending",

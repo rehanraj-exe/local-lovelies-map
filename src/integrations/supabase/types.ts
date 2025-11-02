@@ -536,7 +536,7 @@ export type Database = {
           id: string
           order_id: string | null
           payment_method: string
-          shop_id: string
+          shop_id: string | null
           status: string
           updated_at: string
           upi_transaction_id: string | null
@@ -548,7 +548,7 @@ export type Database = {
           id?: string
           order_id?: string | null
           payment_method?: string
-          shop_id: string
+          shop_id?: string | null
           status?: string
           updated_at?: string
           upi_transaction_id?: string | null
@@ -560,7 +560,7 @@ export type Database = {
           id?: string
           order_id?: string | null
           payment_method?: string
-          shop_id?: string
+          shop_id?: string | null
           status?: string
           updated_at?: string
           upi_transaction_id?: string | null
