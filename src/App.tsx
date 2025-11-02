@@ -16,6 +16,7 @@ import Orders from "./pages/Orders";
 import Wallet from "./pages/Wallet";
 import PaymentProcessing from "./pages/PaymentProcessing";
 import Premium from "./pages/Premium";
+import DeliveryAddresses from "./pages/DeliveryAddresses";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="/wallet" element={<Wallet />} />
           <Route path="/payment-processing" element={<PaymentProcessing />} />
           <Route path="/premium" element={<Premium />} />
+          <Route path="/delivery-addresses" element={<DeliveryAddresses />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

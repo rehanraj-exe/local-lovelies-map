@@ -12,7 +12,7 @@ import { Cart } from '@/components/Cart';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, User, Grid, Map, Briefcase, Store, LogOut, Clock, Filter, Package, Wallet, Crown, Sparkles, Check } from 'lucide-react';
+import { Search, User, Grid, Map, Briefcase, Store, LogOut, Clock, Filter, Package, Wallet, Crown, Sparkles, Check, MapPin } from 'lucide-react';
 import heroImage from '@/assets/hero-town.jpg';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -240,6 +240,10 @@ const Index = () => {
                     <DropdownMenuItem onClick={() => navigate('/orders')}>
                       <Package className="w-4 h-4 mr-2" />
                       My Orders
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/delivery-addresses')}>
+                      <MapPin className="w-4 h-4 mr-2" />
+                      Delivery Addresses
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate('/dashboard')}>
                       <Store className="w-4 h-4 mr-2" />
