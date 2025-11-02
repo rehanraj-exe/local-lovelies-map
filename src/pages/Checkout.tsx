@@ -106,15 +106,16 @@ const Checkout = () => {
     return cartItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
   };
 
-  const generateUpiUrl = (amount: number, shopUpiId: string, shopName: string) => {
-    const upiParams = new URLSearchParams({
-      pa: shopUpiId,
-      pn: shopName,
-      am: amount.toString(),
-      cu: 'INR',
-      tn: `Payment for order`
+  const generateUpiUrl = (amount: number, shopUpiId: string, shopName: string, orderId: string) => {
+    // Format: upi://pay?pa=<VPA>&pn=<Name>&am=<Amount>&cu=<Currency>&tn=<Note>
+    const params = new URLSearchParams({
+      pa: shopUpiId, // Payee VPA (UPI ID)
+      pn: shopName, // Payee name
+      am: amount.toFixed(2), // Amount
+      cu: 'INR', // Currency
+      tn: `Order ${orderId.substring(0, 8)}` // Transaction note
     });
-    return `upi://pay?${upiParams.toString()}`;
+    return `upi://pay?${params.toString()}`;
   };
 
   const handlePlaceOrder = async () => {
@@ -136,6 +137,8 @@ const Checkout = () => {
         acc[item.shop_id].push(item);
         return acc;
       }, {} as Record<string, CartItem[]>);
+
+      const createdOrders: Array<{ orderId: string; shopId: string; amount: number; shopName: string; upiId: string }> = [];
 
       // Create separate orders for each shop
       for (const [shopId, items] of Object.entries(itemsByShop)) {
@@ -205,6 +208,17 @@ const Checkout = () => {
           .insert(orderItems);
 
         if (itemsError) throw itemsError;
+
+        // Store order details for UPI redirect
+        if ((paymentMethod === 'bank_upi' || paymentMethod === 'other_upi') && shop.upi_id) {
+          createdOrders.push({
+            orderId: order.id,
+            shopId: shopId,
+            amount: totalAmount,
+            shopName: shop.name,
+            upiId: shop.upi_id
+          });
+        }
       }
 
       // Clear cart
@@ -215,25 +229,27 @@ const Checkout = () => {
 
       if (deleteError) throw deleteError;
 
-      toast({ title: 'Order placed successfully!' });
-      
-      // If UPI payment, redirect to UPI for the first shop
-      if (paymentMethod === 'bank_upi' || paymentMethod === 'other_upi') {
-        const firstShopId = Object.keys(itemsByShop)[0];
-        const { data: shop } = await supabase
-          .from('shops')
-          .select('upi_id, name')
-          .eq('id', firstShopId)
-          .single();
+      // If UPI payment, redirect to UPI app
+      if ((paymentMethod === 'bank_upi' || paymentMethod === 'other_upi') && createdOrders.length > 0) {
+        // For now, redirect to first shop's UPI payment
+        // In a real app, you might want to handle multiple shop payments differently
+        const firstOrder = createdOrders[0];
+        const upiUrl = generateUpiUrl(firstOrder.amount, firstOrder.upiId, firstOrder.shopName, firstOrder.orderId);
         
-        if (shop?.upi_id) {
-          const totalAmount = getTotalPrice();
-          const upiUrl = generateUpiUrl(totalAmount, shop.upi_id, shop.name);
+        toast({ 
+          title: 'Redirecting to UPI...', 
+          description: 'Complete payment in your UPI app' 
+        });
+        
+        // Small delay to show the toast
+        setTimeout(() => {
           window.location.href = upiUrl;
-          return;
-        }
+        }, 1000);
+        
+        return;
       }
       
+      toast({ title: 'Order placed successfully!' });
       navigate('/orders');
     } catch (error) {
       console.error('Error placing order:', error);
