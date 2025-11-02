@@ -7,7 +7,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* About Section */}
           <div>
-            <h3 className="text-white font-semibold text-lg mb-4">About re:local</h3>
+            <h3 className="text-white font-semibold text-lg mb-4">About Re:Local</h3>
             <p className="text-sm leading-relaxed">
               Connecting local businesses with their community. Discover amazing shops, 
               cafes, and services right in your neighborhood.
@@ -40,6 +40,14 @@ const Footer = () => {
               <li className="flex items-center gap-2 hover:text-white transition-colors">
                 <Phone className="h-4 w-4" />
                 <a href="tel:+919824756329">+91 98247 56329</a>
+              </li>
+              <li className="flex items-center gap-2 hover:text-white transition-colors">
+                <Phone className="h-4 w-4" />
+                <a href="tel:+919876543210">+91 98765 43210</a>
+              </li>
+              <li className="flex items-center gap-2 hover:text-white transition-colors">
+                <Phone className="h-4 w-4" />
+                <a href="tel:+919123456789">+91 91234 56789</a>
               </li>
               <li className="flex items-center gap-2 hover:text-white transition-colors">
                 <Mail className="h-4 w-4" />
@@ -79,7 +87,7 @@ const Footer = () => {
 
         {/* Copyright */}
         <div className="border-t border-gray-800 mt-8 pt-6 text-center text-sm">
-          <p>© 2025 re:local. All rights reserved.</p>
+          <p>© 2025 Re:Local. All rights reserved.</p>
         </div>
       </div>
     </footer>
