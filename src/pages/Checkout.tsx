@@ -261,7 +261,7 @@ const Checkout = () => {
               <CardTitle>Payment Method</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <RadioGroup value={paymentMethod} onValueChange={(value: 'cod' | 'upi') => setPaymentMethod(value)}>
+              <RadioGroup value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as 'cod' | 'upi')}>
                 <div className="flex items-center space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-accent/50">
                   <RadioGroupItem value="cod" id="cod" />
                   <Label htmlFor="cod" className="flex-1 cursor-pointer">
