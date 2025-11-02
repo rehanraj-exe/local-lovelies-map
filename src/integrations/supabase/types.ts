@@ -275,10 +275,14 @@ export type Database = {
           delivery_notes: string | null
           delivery_phone: string
           id: string
+          payment_id: string | null
+          payment_method: string | null
+          payment_status: string | null
           shop_id: string
           status: string
           total_amount: number
           updated_at: string
+          upi_transaction_id: string | null
           user_id: string
         }
         Insert: {
@@ -287,10 +291,14 @@ export type Database = {
           delivery_notes?: string | null
           delivery_phone: string
           id?: string
+          payment_id?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
           shop_id: string
           status?: string
           total_amount: number
           updated_at?: string
+          upi_transaction_id?: string | null
           user_id: string
         }
         Update: {
@@ -299,10 +307,14 @@ export type Database = {
           delivery_notes?: string | null
           delivery_phone?: string
           id?: string
+          payment_id?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
           shop_id?: string
           status?: string
           total_amount?: number
           updated_at?: string
+          upi_transaction_id?: string | null
           user_id?: string
         }
         Relationships: [

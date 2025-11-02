@@ -7,7 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Smartphone } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 interface CartItem {
   id: string;
@@ -32,6 +33,8 @@ const Checkout = () => {
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
   const [notes, setNotes] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'upi'>('cod');
+  const [upiId, setUpiId] = useState('');
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -103,9 +106,26 @@ const Checkout = () => {
     return cartItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
   };
 
+  const generateUpiUrl = (amount: number) => {
+    const merchantName = 'LocalShops';
+    const upiParams = new URLSearchParams({
+      pa: upiId || 'merchant@upi', // Payee UPI ID
+      pn: merchantName,
+      am: amount.toString(),
+      cu: 'INR',
+      tn: `Payment for order`
+    });
+    return `upi://pay?${upiParams.toString()}`;
+  };
+
   const handlePlaceOrder = async () => {
     if (!address.trim() || !phone.trim()) {
       toast({ title: 'Please fill in all required fields', variant: 'destructive' });
+      return;
+    }
+
+    if (paymentMethod === 'upi' && !upiId.trim()) {
+      toast({ title: 'Please enter UPI ID', variant: 'destructive' });
       return;
     }
 
@@ -137,7 +157,10 @@ const Checkout = () => {
             delivery_address: address,
             delivery_phone: phone,
             delivery_notes: notes,
-            status: 'pending'
+            status: 'pending',
+            payment_method: paymentMethod,
+            payment_status: paymentMethod === 'cod' ? 'pending' : 'pending',
+            payment_id: paymentMethod === 'upi' ? upiId : null
           })
           .select()
           .single();
@@ -166,6 +189,13 @@ const Checkout = () => {
         .eq('user_id', user.id);
 
       if (deleteError) throw deleteError;
+
+      // If UPI payment, open UPI app
+      if (paymentMethod === 'upi') {
+        const totalAmount = getTotalPrice();
+        const upiUrl = generateUpiUrl(totalAmount);
+        window.location.href = upiUrl;
+      }
 
       toast({ title: 'Order placed successfully!' });
       navigate('/orders');
@@ -223,6 +253,58 @@ const Checkout = () => {
                   rows={2}
                 />
               </div>
+            </CardContent>
+          </Card>
+
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle>Payment Method</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <RadioGroup value={paymentMethod} onValueChange={(value: 'cod' | 'upi') => setPaymentMethod(value)}>
+                <div className="flex items-center space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-accent/50">
+                  <RadioGroupItem value="cod" id="cod" />
+                  <Label htmlFor="cod" className="flex-1 cursor-pointer">
+                    <div className="font-semibold">Cash on Delivery</div>
+                    <div className="text-sm text-muted-foreground">Pay when you receive</div>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-accent/50">
+                  <RadioGroupItem value="upi" id="upi" />
+                  <Label htmlFor="upi" className="flex-1 cursor-pointer">
+                    <div className="flex items-center gap-2">
+                      <Smartphone className="w-4 h-4" />
+                      <span className="font-semibold">UPI Payment</span>
+                    </div>
+                    <div className="text-sm text-muted-foreground">Pay via UPI apps</div>
+                  </Label>
+                </div>
+              </RadioGroup>
+
+              {paymentMethod === 'upi' && (
+                <div className="space-y-3 animate-in fade-in-50">
+                  <div>
+                    <Label htmlFor="upiId">Enter Merchant UPI ID *</Label>
+                    <Input
+                      id="upiId"
+                      type="text"
+                      placeholder="merchant@upi"
+                      value={upiId}
+                      onChange={(e) => setUpiId(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Enter the shop's UPI ID for payment
+                    </p>
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    <div className="text-xs text-muted-foreground w-full mb-1">Popular UPI apps:</div>
+                    <div className="px-3 py-1 bg-muted rounded text-xs">GPay</div>
+                    <div className="px-3 py-1 bg-muted rounded text-xs">PhonePe</div>
+                    <div className="px-3 py-1 bg-muted rounded text-xs">Paytm</div>
+                    <div className="px-3 py-1 bg-muted rounded text-xs">BHIM</div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
