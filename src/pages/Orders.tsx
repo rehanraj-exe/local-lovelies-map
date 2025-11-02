@@ -13,6 +13,9 @@ interface Order {
   delivery_address: string;
   delivery_phone: string;
   status: string;
+  payment_status: string;
+  payment_method: string;
+  upi_transaction_id: string | null;
   created_at: string;
   shop: {
     name: string;
@@ -49,6 +52,9 @@ const Orders = () => {
           delivery_address,
           delivery_phone,
           status,
+          payment_status,
+          payment_method,
+          upi_transaction_id,
           created_at,
           shop:shops(name),
           order_items(
@@ -81,6 +87,15 @@ const Orders = () => {
     }
   };
 
+  const getPaymentStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed': return 'bg-green-500';
+      case 'pending': return 'bg-yellow-500';
+      case 'failed': return 'bg-red-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
   if (loading) {
     return <div className="container mx-auto px-4 py-8">Loading...</div>;
   }
@@ -105,16 +120,21 @@ const Orders = () => {
           {orders.map((order) => (
             <Card key={order.id}>
               <CardHeader>
-                <div className="flex justify-between items-start">
+                <div className="flex justify-between items-start flex-wrap gap-4">
                   <div>
                     <CardTitle className="text-xl">{order.shop.name}</CardTitle>
                     <p className="text-sm text-muted-foreground">
                       {format(new Date(order.created_at), 'PPpp')}
                     </p>
                   </div>
-                  <Badge className={getStatusColor(order.status)}>
-                    {order.status.replace('_', ' ').toUpperCase()}
-                  </Badge>
+                  <div className="flex flex-col gap-2 items-end">
+                    <Badge className={getStatusColor(order.status)}>
+                      {order.status.replace('_', ' ').toUpperCase()}
+                    </Badge>
+                    <Badge className={getPaymentStatusColor(order.payment_status)}>
+                      Payment: {order.payment_status}
+                    </Badge>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -134,9 +154,15 @@ const Orders = () => {
                       <span>₹{order.total_amount}</span>
                     </div>
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm text-muted-foreground space-y-1">
                     <p><strong>Delivery Address:</strong> {order.delivery_address}</p>
                     <p><strong>Phone:</strong> {order.delivery_phone}</p>
+                    <p className="capitalize"><strong>Payment Method:</strong> {order.payment_method}</p>
+                    {order.upi_transaction_id && (
+                      <p className="font-mono text-xs">
+                        <strong>Transaction ID:</strong> {order.upi_transaction_id}
+                      </p>
+                    )}
                   </div>
                 </div>
               </CardContent>

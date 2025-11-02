@@ -316,22 +316,18 @@ const Checkout = () => {
 
       if (deleteError) throw deleteError;
 
-      // If UPI payment, redirect to UPI app
+      // If UPI payment, redirect to payment processing page
       if ((paymentMethod === 'bank_upi' || paymentMethod === 'other_upi') && createdOrders.length > 0) {
-        // For now, redirect to first shop's UPI payment
-        // In a real app, you might want to handle multiple shop payments differently
-        const firstOrder = createdOrders[0];
-        const upiUrl = generateUpiUrl(firstOrder.amount, firstOrder.upiId, firstOrder.shopName, firstOrder.orderId);
-        
+        const orderIdsString = createdOrders.map(o => o.orderId).join(',');
         toast({ 
-          title: 'Redirecting to UPI...', 
-          description: 'Complete payment in your UPI app' 
+          title: 'Redirecting to payment...', 
+          description: 'Complete your UPI payment' 
         });
         
-        // Small delay to show the toast
+        // Redirect to payment processing page
         setTimeout(() => {
-          window.location.href = upiUrl;
-        }, 1000);
+          navigate(`/payment-processing?orders=${orderIdsString}&method=upi`);
+        }, 500);
         
         return;
       }

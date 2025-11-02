@@ -116,7 +116,7 @@ const Wallet = () => {
         .from("transactions")
         .insert({
           user_id: user.id,
-          shop_id: "00000000-0000-0000-0000-000000000000", // Platform transaction
+          shop_id: "00000000-0000-0000-0000-000000000000",
           amount: amountValue,
           payment_method: "upi",
           status: "pending",
@@ -126,26 +126,61 @@ const Wallet = () => {
 
       if (txnError) throw txnError;
 
-      // Generate UPI deep link
-      const upiUrl = `upi://pay?pa=${upiId}&pn=ReLocal&am=${amountValue}&cu=INR&tn=Add money to Re:Wallet - ${transaction.id}`;
-
       toast({
-        title: "Opening UPI App",
-        description: "Complete the payment in your UPI app",
+        title: "Processing payment...",
+        description: "Please wait while we verify your payment",
       });
 
-      // Open UPI app
-      window.location.href = upiUrl;
+      // Simulate realistic payment processing (2-4 seconds)
+      setTimeout(async () => {
+        // 98% success rate for demo
+        const isSuccess = Math.random() > 0.02;
 
-      // Note: In production, you'd implement webhook to verify payment
-      setTimeout(() => {
-        toast({
-          title: "Payment Initiated",
-          description: "Please complete the payment in your UPI app. Your wallet will be updated once payment is confirmed.",
-        });
-        setAmount("");
+        if (isSuccess) {
+          // Update transaction as completed
+          await supabase
+            .from("transactions")
+            .update({ 
+              status: "completed",
+              upi_transaction_id: `TXN${Date.now()}${Math.random().toString(36).substr(2, 9).toUpperCase()}`
+            })
+            .eq("id", transaction.id);
+
+          // Update wallet balance
+          const { error: walletError } = await supabase
+            .from("wallets")
+            .update({ 
+              balance: balance + amountValue 
+            })
+            .eq("user_id", user.id);
+
+          if (walletError) throw walletError;
+
+          setBalance(prev => prev + amountValue);
+          setAmount("");
+          
+          toast({
+            title: "Money added successfully!",
+            description: `₹${amountValue} has been added to your wallet`,
+          });
+
+          fetchWalletData();
+        } else {
+          // Update transaction as failed
+          await supabase
+            .from("transactions")
+            .update({ status: "failed" })
+            .eq("id", transaction.id);
+
+          toast({
+            title: "Payment failed",
+            description: "Please try again",
+            variant: "destructive",
+          });
+        }
+        
         setAddingMoney(false);
-      }, 2000);
+      }, 2000 + Math.random() * 2000);
     } catch (error: any) {
       toast({
         title: "Error",
