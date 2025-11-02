@@ -12,11 +12,12 @@ import { Cart } from '@/components/Cart';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, User, Grid, Map, Briefcase, Store, LogOut, Clock, Filter, Package, Wallet, Crown, Sparkles, Check, MapPin } from 'lucide-react';
+import { Search, User, Grid, Map, Briefcase, Store, LogOut, Clock, Filter, Package, Wallet, Crown, Sparkles, Check, MapPin, Mic, Loader2 } from 'lucide-react';
 import heroImage from '@/assets/hero-town.jpg';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useVoiceRecording } from '@/hooks/useVoiceRecording';
 
 interface Shop {
   id: string;
@@ -48,6 +49,22 @@ const Index = () => {
   const [showOpenOnly, setShowOpenOnly] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [mapFilter, setMapFilter] = useState<'all' | 'deals' | 'new' | 'open' | 'closed'>('all');
+  
+  // Voice recording hook
+  const { isRecording, isProcessing, startRecording, stopRecording } = useVoiceRecording();
+
+  const handleVoiceSearch = async () => {
+    if (isRecording) {
+      try {
+        const transcribedText = await stopRecording();
+        setSearchQuery(transcribedText);
+      } catch (error) {
+        console.error('Error stopping recording:', error);
+      }
+    } else {
+      startRecording();
+    }
+  };
 
   // Fetch shops from database
   useEffect(() => {
@@ -141,15 +158,31 @@ const Index = () => {
       <div className="sticky top-0 z-40 bg-card/95 backdrop-blur-sm border-b border-border shadow-soft">
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col md:flex-row gap-4 items-center">
-            {/* Search with autocomplete */}
-            <div className="relative flex-1 w-full">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <Input
-                placeholder="Search shops, categories, or areas..."
-                className="pl-10 rounded-full border-border"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+            {/* Search with voice */}
+            <div className="relative flex-1 w-full flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                  placeholder="Search shops, categories, or areas..."
+                  className="pl-10 pr-4 rounded-full border-border"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleVoiceSearch}
+                disabled={isProcessing}
+                className={`rounded-full transition-all ${isRecording ? 'bg-destructive text-destructive-foreground animate-pulse' : ''} ${isProcessing ? 'opacity-50' : ''}`}
+                title={isRecording ? 'Stop recording' : 'Start voice search'}
+              >
+                {isProcessing ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Mic className={`w-5 h-5 ${isRecording ? 'animate-pulse' : ''}`} />
+                )}
+              </Button>
             </div>
 
             {/* Open Now Filter */}
