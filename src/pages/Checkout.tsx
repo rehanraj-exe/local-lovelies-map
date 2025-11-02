@@ -142,6 +142,7 @@ const Checkout = () => {
 
       // Create separate orders for each shop
       for (const [shopId, items] of Object.entries(itemsByShop)) {
+        const currentUser = (await supabase.auth.getUser()).data.user;
         const totalAmount = items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
 
         // Get shop details including UPI ID
@@ -218,6 +219,18 @@ const Checkout = () => {
             shopName: shop.name,
             upiId: shop.upi_id
           });
+
+          // Create transaction record
+          if (currentUser) {
+            await supabase.from('transactions').insert({
+              user_id: currentUser.id,
+              shop_id: shopId,
+              order_id: order.id,
+              amount: totalAmount,
+              payment_method: paymentMethod,
+              status: 'pending'
+            });
+          }
         }
       }
 
