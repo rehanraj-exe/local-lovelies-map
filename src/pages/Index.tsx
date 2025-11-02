@@ -19,6 +19,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useVoiceRecording } from '@/hooks/useVoiceRecording';
 import { useImageSearch } from '@/hooks/useImageSearch';
+import { CameraSearch } from '@/components/CameraSearch';
 
 interface Shop {
   id: string;
@@ -50,10 +51,11 @@ const Index = () => {
   const [showOpenOnly, setShowOpenOnly] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [mapFilter, setMapFilter] = useState<'all' | 'deals' | 'new' | 'open' | 'closed'>('all');
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
   
   // Voice recording and image search hooks
   const { isRecording, isProcessing: isVoiceProcessing, startRecording, stopRecording } = useVoiceRecording();
-  const { isProcessing: isImageProcessing, captureFromCamera, selectFromGallery, searchByImage } = useImageSearch();
+  const { isProcessing: isImageProcessing, searchByImage } = useImageSearch();
 
   const handleVoiceSearch = async () => {
     if (isRecording) {
@@ -68,21 +70,11 @@ const Index = () => {
     }
   };
 
-  const handleImageSearch = async () => {
-    // Show options: camera or gallery
-    const useCamera = window.confirm('Use camera? (Click OK for camera, Cancel for gallery)');
-    
-    const imageData = useCamera 
-      ? await captureFromCamera()
-      : await selectFromGallery();
-    
-    if (imageData) {
-      const results = await searchByImage(imageData);
-      if (results.matches && results.matches.length > 0) {
-        // Update search query with product name
-        setSearchQuery(results.analysis?.productName || 'Image search results');
-        setViewMode('list'); // Switch to list view to show results
-      }
+  const handleImageSearch = async (imageData: string) => {
+    const results = await searchByImage(imageData);
+    if (results.matches && results.matches.length > 0) {
+      setSearchQuery(results.analysis?.productName || 'Image search results');
+      setViewMode('list');
     }
   };
 
@@ -192,16 +184,12 @@ const Index = () => {
               <Button
                 variant="outline"
                 size="icon"
-                onClick={handleImageSearch}
+                onClick={() => setIsCameraOpen(true)}
                 disabled={isImageProcessing}
                 className={`rounded-full transition-all ${isImageProcessing ? 'opacity-50' : ''}`}
                 title="Search by image"
               >
-                {isImageProcessing ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <Camera className="w-5 h-5" />
-                )}
+                <Camera className="w-5 h-5" />
               </Button>
               <Button
                 variant="outline"
@@ -571,6 +559,13 @@ const Index = () => {
 
       {/* AI Chat Assistant */}
       <AIChatAssistant />
+      
+      {/* Camera Search Modal */}
+      <CameraSearch
+        isOpen={isCameraOpen}
+        onClose={() => setIsCameraOpen(false)}
+        onImageCapture={handleImageSearch}
+      />
       
       <Footer />
     </div>
