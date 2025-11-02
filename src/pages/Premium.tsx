@@ -16,10 +16,6 @@ const Premium = () => {
   const [subscription, setSubscription] = useState<any>(null);
 
   useEffect(() => {
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
     fetchSubscription();
   }, [user]);
 
@@ -39,7 +35,11 @@ const Premium = () => {
   };
 
   const handleSubscribe = async (plan: string, price: number, cycle: string) => {
-    if (!user) return;
+    if (!user) {
+      toast.error('Please sign in to subscribe to premium');
+      navigate('/auth');
+      return;
+    }
 
     setLoading(true);
 
@@ -167,10 +167,17 @@ const Premium = () => {
             <p className="text-xl md:text-2xl mb-2">
               Unlock Exclusive Features & Grow Your Business
             </p>
-            <p className="text-white/80">
+            <p className="text-white/80 mb-4">
               Join thousands of premium users and shops already benefiting from our platform
             </p>
-            {currentPlan !== 'free' && (
+            {!user && (
+              <div className="bg-white/10 backdrop-blur-sm rounded-full px-6 py-3 inline-block">
+                <p className="text-white text-sm">
+                  👋 Browse plans below • Sign in to subscribe
+                </p>
+              </div>
+            )}
+            {currentPlan !== 'free' && user && (
               <Badge className="mt-4 bg-white text-purple-600 hover:bg-white text-lg px-6 py-2">
                 ✨ You're Premium: {currentPlan.replace('_', ' ').toUpperCase()}
               </Badge>
@@ -288,6 +295,11 @@ const Premium = () => {
                         <Check className="w-5 h-5 mr-2" />
                         Current Plan
                       </>
+                    ) : !user ? (
+                      <>
+                        <Crown className="w-5 h-5 mr-2" />
+                        Sign In to Subscribe
+                      </>
                     ) : (
                       <>
                         <Crown className="w-5 h-5 mr-2" />
@@ -301,7 +313,7 @@ const Premium = () => {
                     disabled={loading || isActive}
                     onClick={() => handleSubscribe(plan.id, plan.yearly, 'yearly')}
                   >
-                    {isActive ? 'Current Plan' : (
+                    {isActive ? 'Current Plan' : !user ? 'Sign In to Subscribe' : (
                       <>
                         <Sparkles className="w-5 h-5 mr-2" />
                         Subscribe Yearly - ₹{plan.yearly}
