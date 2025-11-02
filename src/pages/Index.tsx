@@ -6,6 +6,7 @@ import ShopQuickView from '@/components/ShopQuickView';
 import TopLocalPicks from '@/components/TopLocalPicks';
 import { AIChatAssistant } from '@/components/AIChatAssistant';
 import { DiscountCarousel } from '@/components/DiscountCarousel';
+import Footer from '@/components/Footer';
 import { SearchResults } from '@/components/SearchResults';
 import { Cart } from '@/components/Cart';
 import { Button } from '@/components/ui/button';
@@ -499,6 +500,8 @@ const Index = () => {
 
       {/* AI Chat Assistant */}
       <AIChatAssistant />
+      
+      <Footer />
     </div>
   );
 };
