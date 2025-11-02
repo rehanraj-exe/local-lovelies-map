@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { ArrowLeft, Star, MapPin, Phone, Clock, Share2, Heart, Briefcase, Navigation, X } from 'lucide-react';
+import { ArrowLeft, Star, MapPin, Phone, Clock, Share2, Heart, Briefcase, Navigation, X, ShoppingCart } from 'lucide-react';
 
 interface Shop {
   id: string;
@@ -417,7 +417,7 @@ const ShopProfile = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="grid grid-cols-3 gap-3 pt-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-4">
               <Button className="bg-primary hover:bg-primary/90" onClick={handleCallClick}>
                 <Phone className="w-4 h-4 mr-2" />
                 Call
@@ -425,6 +425,10 @@ const ShopProfile = () => {
               <Button variant="outline" onClick={openDirections}>
                 <MapPin className="w-4 h-4 mr-2" />
                 Directions
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/checkout')}>
+                <ShoppingCart className="w-4 h-4 mr-2" />
+                Cart
               </Button>
               <Button variant="outline" onClick={handleShare}>
                 <Share2 className="w-4 h-4 mr-2" />
