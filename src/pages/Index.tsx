@@ -11,7 +11,7 @@ import { Cart } from '@/components/Cart';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, User, Grid, Map, Briefcase, Store, LogOut, Clock, Filter, Package, Wallet } from 'lucide-react';
+import { Search, User, Grid, Map, Briefcase, Store, LogOut, Clock, Filter, Package, Wallet, Crown } from 'lucide-react';
 import heroImage from '@/assets/hero-town.jpg';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -188,6 +188,16 @@ const Index = () => {
             <div className="flex gap-2">
               <Cart />
               
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/premium')}
+                className="rounded-full"
+              >
+                <Crown className="w-4 h-4 mr-2" />
+                Premium
+              </Button>
+
               {user && (
                 <Button
                   variant="outline"
@@ -218,6 +228,10 @@ const Index = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => navigate('/premium')}>
+                      <Crown className="w-4 h-4 mr-2" />
+                      Go Premium
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate('/wallet')}>
                       <Wallet className="w-4 h-4 mr-2" />
                       Re:Wallet

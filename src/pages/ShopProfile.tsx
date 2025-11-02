@@ -77,6 +77,7 @@ const ShopProfile = () => {
   const [showDirections, setShowDirections] = useState(false);
   const [newReview, setNewReview] = useState({ rating: 5, comment: '' });
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [shopOwnerPlan, setShopOwnerPlan] = useState<string>('free');
 
   useEffect(() => {
     const fetchShopData = async () => {
@@ -137,6 +138,21 @@ const ShopProfile = () => {
 
         // Track shop view for analytics
         await supabase.rpc('track_shop_view', { shop_uuid: id });
+
+        // Check shop owner's premium status
+        if (shopData.owner_id) {
+          const { data: subData } = await supabase
+            .from('subscriptions')
+            .select('plan')
+            .eq('user_id', shopData.owner_id)
+            .eq('status', 'active')
+            .gt('expires_at', new Date().toISOString())
+            .maybeSingle();
+
+          if (subData) {
+            setShopOwnerPlan(subData.plan);
+          }
+        }
       } catch (error) {
         console.error('Error fetching shop data:', error);
         toast.error('Failed to load shop data');
@@ -301,6 +317,11 @@ const ShopProfile = () => {
                   <h1 className="text-3xl font-bold">{shop.name}</h1>
                   {shop.verified && (
                     <Badge variant="featured">✓ Verified</Badge>
+                  )}
+                  {shopOwnerPlan === 'shop_premium' && (
+                    <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white border-0">
+                      ✨ Premium
+                    </Badge>
                   )}
                 </div>
                 <p className="text-muted-foreground">{shop.category}</p>

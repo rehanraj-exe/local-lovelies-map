@@ -570,6 +570,48 @@ export type Database = {
         }
         Relationships: []
       }
+      subscriptions: {
+        Row: {
+          auto_renew: boolean | null
+          billing_cycle: string
+          created_at: string
+          expires_at: string
+          id: string
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          price: number
+          started_at: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auto_renew?: boolean | null
+          billing_cycle?: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          price?: number
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auto_renew?: boolean | null
+          billing_cycle?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          price?: number
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           amount: number
@@ -674,6 +716,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_plan: { Args: { _user_id: string }; Returns: string }
+      has_premium_subscription: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -686,6 +730,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "shop_owner" | "delivery_partner" | "user"
+      subscription_plan: "free" | "customer_premium" | "shop_premium"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -814,6 +859,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "shop_owner", "delivery_partner", "user"],
+      subscription_plan: ["free", "customer_premium", "shop_premium"],
     },
   },
 } as const
