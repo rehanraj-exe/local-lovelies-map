@@ -48,7 +48,6 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [shops, setShops] = useState<Shop[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showOpenOnly, setShowOpenOnly] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [mapFilter, setMapFilter] = useState<'all' | 'deals' | 'new' | 'open' | 'closed'>('all');
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -127,7 +126,6 @@ const Index = () => {
     // Apply other filters
     return results.filter((shop) => {
       const matchesCategory = selectedCategory === 'All' || shop.category === selectedCategory;
-      const matchesOpenStatus = !showOpenOnly || shop.open_now;
       
       // Apply map filter
       const isNew = new Date(shop.created_at || '').getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000;
@@ -138,9 +136,9 @@ const Index = () => {
         (mapFilter === 'open' && shop.open_now) ||
         (mapFilter === 'closed' && !shop.open_now);
       
-      return matchesCategory && matchesOpenStatus && matchesMapFilter;
+      return matchesCategory && matchesMapFilter;
     });
-  }, [shops, fuse, selectedCategory, searchQuery, showOpenOnly, mapFilter]);
+  }, [shops, fuse, selectedCategory, searchQuery, mapFilter]);
 
   // Count active offers (you can fetch this from offers table later)
   const activeOffers = 0; // Placeholder for now
@@ -206,17 +204,6 @@ const Index = () => {
                 )}
               </Button>
             </div>
-
-            {/* Open Now Filter */}
-            <Button
-              variant={showOpenOnly ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setShowOpenOnly(!showOpenOnly)}
-              className="rounded-full"
-            >
-              <Clock className="w-4 h-4 mr-2" />
-              Open Now
-            </Button>
 
             {/* View Toggle */}
             <div className="flex gap-2">
