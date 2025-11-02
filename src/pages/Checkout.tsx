@@ -7,8 +7,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Smartphone, Wallet } from 'lucide-react';
+import { ArrowLeft, Smartphone, Wallet, MapPin, Plus, Home, Briefcase } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 
 interface CartItem {
   id: string;
@@ -27,6 +29,18 @@ interface CartItem {
   };
 }
 
+interface DeliveryAddress {
+  id: string;
+  label: string;
+  address_line1: string;
+  address_line2?: string;
+  city: string;
+  state: string;
+  pincode: string;
+  phone: string;
+  is_default: boolean;
+}
+
 const Checkout = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -36,11 +50,15 @@ const Checkout = () => {
   const [paymentMethod, setPaymentMethod] = useState<'bank_upi' | 'other_upi' | 'emi' | 'cod' | 'wallet'>('cod');
   const [selectedBank, setSelectedBank] = useState('');
   const [walletBalance, setWalletBalance] = useState(0);
+  const [savedAddresses, setSavedAddresses] = useState<DeliveryAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('');
+  const [showAddressDialog, setShowAddressDialog] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchCartItems();
+    fetchSavedAddresses();
   }, []);
 
   const fetchCartItems = async () => {
@@ -112,6 +130,37 @@ const Checkout = () => {
       console.error('Error fetching cart:', error);
       toast({ title: 'Error loading cart', variant: 'destructive' });
     }
+  };
+
+  const fetchSavedAddresses = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('delivery_addresses')
+        .select('*')
+        .order('is_default', { ascending: false })
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      setSavedAddresses(data || []);
+      
+      // Auto-select default address
+      const defaultAddress = data?.find(addr => addr.is_default);
+      if (defaultAddress) {
+        selectAddress(defaultAddress);
+      }
+    } catch (error) {
+      console.error('Error fetching addresses:', error);
+    }
+  };
+
+  const selectAddress = (addr: DeliveryAddress) => {
+    setSelectedAddressId(addr.id);
+    setAddress(`${addr.address_line1}${addr.address_line2 ? ', ' + addr.address_line2 : ''}, ${addr.city}, ${addr.state} - ${addr.pincode}`);
+    setPhone(addr.phone);
   };
 
   const getTotalPrice = () => {
@@ -364,38 +413,117 @@ const Checkout = () => {
         <div>
           <Card>
             <CardHeader>
-              <CardTitle>Delivery Information</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Delivery Information</CardTitle>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/delivery-addresses')}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Manage Addresses
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="address">Delivery Address *</Label>
-                <Textarea
-                  id="address"
-                  placeholder="Enter your full delivery address"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  rows={3}
-                />
-              </div>
-              <div>
-                <Label htmlFor="phone">Phone Number *</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="Enter your phone number"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="notes">Delivery Notes (Optional)</Label>
-                <Textarea
-                  id="notes"
-                  placeholder="Any special instructions for delivery"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={2}
-                />
+              {/* Saved Addresses */}
+              {savedAddresses.length > 0 && (
+                <div className="space-y-3">
+                  <Label>Select Saved Address</Label>
+                  <div className="grid gap-2">
+                    {savedAddresses.map((addr) => (
+                      <Card
+                        key={addr.id}
+                        className={`cursor-pointer transition-all hover:shadow-md ${
+                          selectedAddressId === addr.id
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border'
+                        }`}
+                        onClick={() => selectAddress(addr)}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start gap-3">
+                              <div className="mt-1">
+                                {addr.label === 'Home' && <Home className="h-4 w-4" />}
+                                {addr.label === 'Work' && <Briefcase className="h-4 w-4" />}
+                                {addr.label === 'Other' && <MapPin className="h-4 w-4" />}
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-semibold">{addr.label}</span>
+                                  {addr.is_default && (
+                                    <Badge variant="secondary" className="text-xs">Default</Badge>
+                                  )}
+                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                  {addr.address_line1}
+                                  {addr.address_line2 && `, ${addr.address_line2}`}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  {addr.city}, {addr.state} - {addr.pincode}
+                                </p>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  Phone: {addr.phone}
+                                </p>
+                              </div>
+                            </div>
+                            {selectedAddressId === addr.id && (
+                              <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                                <div className="w-2 h-2 rounded-full bg-white"></div>
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Manual Address Entry */}
+              <div className="pt-4 border-t">
+                <Label className="text-sm text-muted-foreground mb-3 block">
+                  Or enter address manually
+                </Label>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="address">Delivery Address *</Label>
+                    <Textarea
+                      id="address"
+                      placeholder="Enter your full delivery address"
+                      value={address}
+                      onChange={(e) => {
+                        setAddress(e.target.value);
+                        setSelectedAddressId('');
+                      }}
+                      rows={3}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="phone">Phone Number *</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="Enter your phone number"
+                      value={phone}
+                      onChange={(e) => {
+                        setPhone(e.target.value);
+                        if (selectedAddressId) setSelectedAddressId('');
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="notes">Delivery Notes (Optional)</Label>
+                    <Textarea
+                      id="notes"
+                      placeholder="Any special instructions for delivery"
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      rows={2}
+                    />
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
