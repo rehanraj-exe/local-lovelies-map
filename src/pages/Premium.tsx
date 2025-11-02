@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { ArrowLeft, Check, Crown, Store, Sparkles, TrendingUp, Zap } from 'lucide-react';
+import { ArrowLeft, Check, Crown, Store, Sparkles, TrendingUp, Zap, Star, Shield, Target } from 'lucide-react';
 
 const Premium = () => {
   const navigate = useNavigate();
@@ -145,33 +145,81 @@ const Premium = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-        <Button
-          variant="ghost"
-          onClick={() => navigate('/')}
-          className="mb-6"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
-
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Sparkles className="w-8 h-8 text-primary" />
-            <h1 className="text-4xl font-bold">Go Premium</h1>
+    <div className="min-h-screen bg-gradient-to-b from-background via-primary/5 to-background">
+      {/* Premium Hero Banner */}
+      <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 text-white py-12">
+        <div className="container mx-auto px-4">
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/')}
+            className="mb-4 text-white hover:bg-white/20"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Home
+          </Button>
+          
+          <div className="text-center max-w-3xl mx-auto">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <Sparkles className="w-12 h-12 animate-pulse" />
+              <h1 className="text-5xl md:text-6xl font-bold">Go Premium</h1>
+              <Crown className="w-12 h-12 animate-pulse" />
+            </div>
+            <p className="text-xl md:text-2xl mb-2">
+              Unlock Exclusive Features & Grow Your Business
+            </p>
+            <p className="text-white/80">
+              Join thousands of premium users and shops already benefiting from our platform
+            </p>
+            {currentPlan !== 'free' && (
+              <Badge className="mt-4 bg-white text-purple-600 hover:bg-white text-lg px-6 py-2">
+                ✨ You're Premium: {currentPlan.replace('_', ' ').toUpperCase()}
+              </Badge>
+            )}
           </div>
-          <p className="text-xl text-muted-foreground">
-            Unlock exclusive features and grow your business
-          </p>
-          {currentPlan !== 'free' && (
-            <Badge variant="default" className="mt-4">
-              Current Plan: {currentPlan.replace('_', ' ').toUpperCase()}
-            </Badge>
-          )}
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-12">
+        {/* Why Go Premium Section */}
+        <div className="grid md:grid-cols-3 gap-6 mb-12">
+          <Card className="p-6 text-center hover:shadow-lg transition-all">
+            <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Zap className="w-8 h-8 text-white" />
+            </div>
+            <h3 className="text-xl font-bold mb-2">Instant Benefits</h3>
+            <p className="text-muted-foreground">
+              Activate premium and start enjoying benefits immediately
+            </p>
+          </Card>
+          
+          <Card className="p-6 text-center hover:shadow-lg transition-all">
+            <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <TrendingUp className="w-8 h-8 text-white" />
+            </div>
+            <h3 className="text-xl font-bold mb-2">Grow Faster</h3>
+            <p className="text-muted-foreground">
+              Premium shops get 3x more visibility and customer engagement
+            </p>
+          </Card>
+          
+          <Card className="p-6 text-center hover:shadow-lg transition-all">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Shield className="w-8 h-8 text-white" />
+            </div>
+            <h3 className="text-xl font-bold mb-2">Trusted Platform</h3>
+            <p className="text-muted-foreground">
+              Secure payments and dedicated support for all premium members
+            </p>
+          </Card>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+        {/* Pricing Plans */}
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold mb-2">Choose Your Plan</h2>
+          <p className="text-muted-foreground">Select the perfect plan for your needs</p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
           {plans.map((plan) => {
             const Icon = plan.icon;
             const isActive = currentPlan === plan.id;
@@ -179,56 +227,86 @@ const Premium = () => {
             return (
               <Card
                 key={plan.id}
-                className={`p-8 relative overflow-hidden ${
-                  isActive ? 'ring-2 ring-primary' : ''
+                className={`p-8 relative overflow-hidden hover:scale-105 transition-all duration-300 ${
+                  isActive ? 'ring-4 ring-primary shadow-2xl' : 'hover:shadow-xl'
                 }`}
               >
                 {isActive && (
-                  <Badge className="absolute top-4 right-4" variant="default">
-                    Active
-                  </Badge>
+                  <div className="absolute top-0 right-0 bg-gradient-to-br from-green-500 to-emerald-600 text-white px-6 py-2 rounded-bl-2xl">
+                    <Star className="w-4 h-4 inline mr-1" />
+                    Active Plan
+                  </div>
                 )}
 
-                <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${plan.color} flex items-center justify-center mb-6`}>
-                  <Icon className="w-8 h-8 text-white" />
+                {plan.id === 'shop_premium' && !isActive && (
+                  <div className="absolute top-0 right-0 bg-gradient-to-br from-yellow-500 to-orange-600 text-white px-6 py-2 rounded-bl-2xl text-sm font-bold">
+                    🔥 MOST POPULAR
+                  </div>
+                )}
+
+                <div className={`w-20 h-20 rounded-3xl bg-gradient-to-br ${plan.color} flex items-center justify-center mb-6 shadow-lg`}>
+                  <Icon className="w-10 h-10 text-white" />
                 </div>
 
-                <h2 className="text-2xl font-bold mb-2">{plan.name}</h2>
+                <h2 className="text-3xl font-bold mb-3">{plan.name}</h2>
 
                 <div className="mb-6">
-                  <div className="flex items-baseline gap-2 mb-1">
-                    <span className="text-4xl font-bold">₹{plan.monthly}</span>
-                    <span className="text-muted-foreground">/month</span>
+                  <div className="flex items-baseline gap-2 mb-2">
+                    <span className="text-5xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+                      ₹{plan.monthly}
+                    </span>
+                    <span className="text-muted-foreground text-lg">/month</span>
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    or ₹{plan.yearly}/year (save ₹{plan.monthly * 12 - plan.yearly})
+                  <div className="text-sm bg-success/10 text-success px-3 py-2 rounded-full inline-block">
+                    or ₹{plan.yearly}/year - Save ₹{plan.monthly * 12 - plan.yearly}!
                   </div>
                 </div>
 
-                <div className="space-y-3 mb-8">
+                <div className="space-y-4 mb-8">
                   {plan.features.map((feature) => (
-                    <div key={feature} className="flex items-start gap-3">
-                      <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">{feature}</span>
+                    <div key={feature} className="flex items-start gap-3 group">
+                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors">
+                        <Check className="w-4 h-4 text-primary" />
+                      </div>
+                      <span className="text-sm font-medium">{feature}</span>
                     </div>
                   ))}
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <Button
-                    className="w-full"
+                    className={`w-full text-lg py-6 ${
+                      isActive 
+                        ? 'bg-gradient-to-r from-green-500 to-emerald-600' 
+                        : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
+                    }`}
                     disabled={loading || isActive}
                     onClick={() => handleSubscribe(plan.id, plan.monthly, 'monthly')}
                   >
-                    {isActive ? 'Current Plan' : `Subscribe Monthly - ₹${plan.monthly}`}
+                    {isActive ? (
+                      <>
+                        <Check className="w-5 h-5 mr-2" />
+                        Current Plan
+                      </>
+                    ) : (
+                      <>
+                        <Crown className="w-5 h-5 mr-2" />
+                        Subscribe Monthly - ₹{plan.monthly}
+                      </>
+                    )}
                   </Button>
                   <Button
                     variant="outline"
-                    className="w-full"
+                    className="w-full text-lg py-6 border-2 hover:bg-primary/10"
                     disabled={loading || isActive}
                     onClick={() => handleSubscribe(plan.id, plan.yearly, 'yearly')}
                   >
-                    {isActive ? 'Current Plan' : `Subscribe Yearly - ₹${plan.yearly}`}
+                    {isActive ? 'Current Plan' : (
+                      <>
+                        <Sparkles className="w-5 h-5 mr-2" />
+                        Subscribe Yearly - ₹{plan.yearly}
+                      </>
+                    )}
                   </Button>
                 </div>
               </Card>
@@ -238,30 +316,62 @@ const Premium = () => {
 
         {/* Current Subscription Details */}
         {subscription && currentPlan !== 'free' && (
-          <Card className="max-w-2xl mx-auto mt-12 p-6">
-            <h3 className="text-xl font-bold mb-4">Subscription Details</h3>
-            <div className="grid gap-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Plan:</span>
-                <span className="font-semibold">{subscription.plan.replace('_', ' ').toUpperCase()}</span>
+          <Card className="max-w-3xl mx-auto mt-12 p-8 bg-gradient-to-r from-primary/5 to-purple-500/5 border-2">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
+                <Crown className="w-6 h-6 text-white" />
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Billing Cycle:</span>
-                <span className="font-semibold capitalize">{subscription.billing_cycle}</span>
+              <h3 className="text-2xl font-bold">Your Subscription</h3>
+            </div>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="bg-background p-4 rounded-lg">
+                <div className="text-sm text-muted-foreground mb-1">Current Plan</div>
+                <div className="text-xl font-bold">{subscription.plan.replace('_', ' ').toUpperCase()}</div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Expires:</span>
-                <span className="font-semibold">
+              <div className="bg-background p-4 rounded-lg">
+                <div className="text-sm text-muted-foreground mb-1">Billing Cycle</div>
+                <div className="text-xl font-bold capitalize">{subscription.billing_cycle}</div>
+              </div>
+              <div className="bg-background p-4 rounded-lg">
+                <div className="text-sm text-muted-foreground mb-1">Renewal Date</div>
+                <div className="text-xl font-bold">
                   {new Date(subscription.expires_at).toLocaleDateString()}
-                </span>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Auto-renew:</span>
-                <span className="font-semibold">{subscription.auto_renew ? 'Yes' : 'No'}</span>
+              <div className="bg-background p-4 rounded-lg">
+                <div className="text-sm text-muted-foreground mb-1">Auto-Renew</div>
+                <div className="text-xl font-bold">
+                  {subscription.auto_renew ? (
+                    <Badge variant="success">Enabled</Badge>
+                  ) : (
+                    <Badge variant="secondary">Disabled</Badge>
+                  )}
+                </div>
               </div>
             </div>
           </Card>
         )}
+
+        {/* FAQ / Benefits Section */}
+        <div className="max-w-4xl mx-auto mt-16 text-center">
+          <h3 className="text-2xl font-bold mb-4">Why Customers Love Premium</h3>
+          <div className="grid md:grid-cols-2 gap-6">
+            <Card className="p-6">
+              <Target className="w-10 h-10 text-primary mx-auto mb-3" />
+              <h4 className="font-bold mb-2">Better Recommendations</h4>
+              <p className="text-sm text-muted-foreground">
+                AI learns your preferences and suggests the perfect shops and deals
+              </p>
+            </Card>
+            <Card className="p-6">
+              <Star className="w-10 h-10 text-primary mx-auto mb-3" />
+              <h4 className="font-bold mb-2">Early Access</h4>
+              <p className="text-sm text-muted-foreground">
+                Get notified about exclusive deals before anyone else
+              </p>
+            </Card>
+          </div>
+        </div>
       </div>
     </div>
   );

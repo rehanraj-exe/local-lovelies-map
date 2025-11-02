@@ -11,7 +11,7 @@ import { Cart } from '@/components/Cart';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, User, Grid, Map, Briefcase, Store, LogOut, Clock, Filter, Package, Wallet, Crown } from 'lucide-react';
+import { Search, User, Grid, Map, Briefcase, Store, LogOut, Clock, Filter, Package, Wallet, Crown, Sparkles, Check } from 'lucide-react';
 import heroImage from '@/assets/hero-town.jpg';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -189,13 +189,13 @@ const Index = () => {
               <Cart />
               
               <Button
-                variant="outline"
+                variant="default"
                 size="sm"
                 onClick={() => navigate('/premium')}
-                className="rounded-full"
+                className="rounded-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg animate-pulse-soft"
               >
                 <Crown className="w-4 h-4 mr-2" />
-                Premium
+                Go Premium
               </Button>
 
               {user && (
@@ -290,6 +290,48 @@ const Index = () => {
               <Store className="w-4 h-4 mr-2" />
               {user ? 'Register Your Shop' : 'Sign Up to Register'}
             </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Premium Banner */}
+      <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 text-white py-8 animate-fade-in">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="text-center md:text-left flex-1">
+              <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
+                <Crown className="w-6 h-6 animate-pulse" />
+                <h3 className="text-2xl font-bold">Upgrade to Premium Today!</h3>
+                <Sparkles className="w-6 h-6 animate-pulse" />
+              </div>
+              <p className="text-white/90 text-lg">
+                Get exclusive deals, priority support, and ad-free experience starting at just ₹99/month
+              </p>
+              <div className="flex gap-4 justify-center md:justify-start mt-3 text-sm">
+                <span className="flex items-center gap-1">
+                  <Check className="w-4 h-4" /> Ad-Free
+                </span>
+                <span className="flex items-center gap-1">
+                  <Check className="w-4 h-4" /> Early Access
+                </span>
+                <span className="flex items-center gap-1">
+                  <Check className="w-4 h-4" /> AI Recommendations
+                </span>
+              </div>
+            </div>
+            <div className="flex flex-col gap-3">
+              <Button
+                size="lg"
+                onClick={() => navigate('/premium')}
+                className="bg-white text-purple-600 hover:bg-white/90 rounded-full shadow-2xl hover:scale-105 transition-all text-lg px-8 py-6"
+              >
+                <Crown className="w-5 h-5 mr-2" />
+                View Premium Plans
+              </Button>
+              <p className="text-white/80 text-xs text-center">
+                Save up to ₹289 on yearly plans
+              </p>
+            </div>
           </div>
         </div>
       </div>
