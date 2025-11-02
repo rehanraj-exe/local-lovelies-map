@@ -41,15 +41,10 @@ const DeliveryAddresses = () => {
     is_default: false
   });
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-    fetchAddresses();
-  }, [user, navigate]);
+  console.log('DeliveryAddresses component loaded', { user, loading });
 
   const fetchAddresses = async () => {
+    console.log('Fetching addresses...');
     try {
       const { data, error } = await supabase
         .from('delivery_addresses')
@@ -58,6 +53,7 @@ const DeliveryAddresses = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      console.log('Addresses fetched:', data);
       setAddresses(data || []);
     } catch (error) {
       console.error('Error fetching addresses:', error);
@@ -66,6 +62,16 @@ const DeliveryAddresses = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    console.log('useEffect triggered', { user });
+    if (!user) {
+      console.log('No user, redirecting to auth');
+      navigate('/auth');
+      return;
+    }
+    fetchAddresses();
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
