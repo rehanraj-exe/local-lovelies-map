@@ -20,6 +20,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useVoiceRecording } from '@/hooks/useVoiceRecording';
 import { useImageSearch } from '@/hooks/useImageSearch';
 import { CameraSearch } from '@/components/CameraSearch';
+import { VoiceSearch } from '@/components/VoiceSearch';
 
 interface Shop {
   id: string;
@@ -51,22 +52,14 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [mapFilter, setMapFilter] = useState<'all' | 'deals' | 'new' | 'open' | 'closed'>('all');
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [isVoiceOpen, setIsVoiceOpen] = useState(false);
   
-  // Voice recording and image search hooks
-  const { isRecording, isProcessing: isVoiceProcessing, startRecording, stopRecording } = useVoiceRecording();
+  // Image search hook
   const { isProcessing: isImageProcessing, searchByImage } = useImageSearch();
 
-  const handleVoiceSearch = async () => {
-    if (isRecording) {
-      try {
-        const transcribedText = await stopRecording();
-        setSearchQuery(transcribedText);
-      } catch (error) {
-        console.error('Error stopping recording:', error);
-      }
-    } else {
-      startRecording();
-    }
+  const handleVoiceTranscript = (text: string) => {
+    setSearchQuery(text);
+    setViewMode('list');
   };
 
   const handleImageSearch = async (imageData: string) => {
@@ -192,16 +185,11 @@ const Index = () => {
               <Button
                 variant="outline"
                 size="icon"
-                onClick={handleVoiceSearch}
-                disabled={isVoiceProcessing}
-                className={`rounded-full transition-all ${isRecording ? 'bg-destructive text-destructive-foreground animate-pulse' : ''} ${isVoiceProcessing ? 'opacity-50' : ''}`}
-                title={isRecording ? 'Stop recording' : 'Start voice search'}
+                onClick={() => setIsVoiceOpen(true)}
+                className="rounded-full transition-all"
+                title="Voice search"
               >
-                {isVoiceProcessing ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <Mic className={`w-5 h-5 ${isRecording ? 'animate-pulse' : ''}`} />
-                )}
+                <Mic className="w-5 h-5" />
               </Button>
             </div>
 
@@ -552,6 +540,13 @@ const Index = () => {
         isOpen={isCameraOpen}
         onClose={() => setIsCameraOpen(false)}
         onImageCapture={handleImageSearch}
+      />
+
+      {/* Voice Search Modal */}
+      <VoiceSearch
+        isOpen={isVoiceOpen}
+        onClose={() => setIsVoiceOpen(false)}
+        onTranscript={handleVoiceTranscript}
       />
       
       <Footer />
