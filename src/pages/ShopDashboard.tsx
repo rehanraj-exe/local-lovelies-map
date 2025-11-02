@@ -28,11 +28,11 @@ const ShopDashboard = () => {
   const [editingProduct, setEditingProduct] = useState<any>(null);
 
   useEffect(() => {
-    if (!user) {
-      navigate('/auth');
-      return;
+    if (user) {
+      fetchShopData();
+    } else {
+      setLoading(false);
     }
-    fetchShopData();
   }, [user]);
 
   const fetchShopData = async () => {
@@ -268,13 +268,75 @@ const ShopDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Loading...</p>
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading shop dashboard...</p>
+        </div>
       </div>
     );
   }
 
-  if (!shop) return null;
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/')}
+            className="mb-6"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Home
+          </Button>
+
+          <Card className="text-center py-16">
+            <div className="p-8">
+              <Store className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h2 className="text-2xl font-bold mb-2">Sign In Required</h2>
+              <p className="text-muted-foreground mb-6">
+                Please sign in to access your shop dashboard
+              </p>
+              <Button onClick={() => navigate('/auth')} size="lg">
+                Sign In
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (!shop) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/')}
+            className="mb-6"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Home
+          </Button>
+
+          <Card className="text-center py-16">
+            <div className="p-8">
+              <Store className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h2 className="text-2xl font-bold mb-2">No Shop Found</h2>
+              <p className="text-muted-foreground mb-6">
+                You haven't registered a shop yet. Register your business to start managing it!
+              </p>
+              <Button onClick={() => navigate('/register-shop')} size="lg">
+                <Plus className="mr-2 h-4 w-4" />
+                Register Your Shop
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
