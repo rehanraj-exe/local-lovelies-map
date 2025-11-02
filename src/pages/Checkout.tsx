@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Smartphone } from 'lucide-react';
+import { ArrowLeft, Smartphone, Wallet } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 interface CartItem {
@@ -33,8 +33,9 @@ const Checkout = () => {
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
   const [notes, setNotes] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'bank_upi' | 'other_upi' | 'emi' | 'cod'>('cod');
+  const [paymentMethod, setPaymentMethod] = useState<'bank_upi' | 'other_upi' | 'emi' | 'cod' | 'wallet'>('cod');
   const [selectedBank, setSelectedBank] = useState('');
+  const [walletBalance, setWalletBalance] = useState(0);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -96,6 +97,17 @@ const Checkout = () => {
 
       if (error) throw error;
       setCartItems(data as any);
+
+      // Fetch wallet balance
+      const { data: wallet, error: walletError } = await supabase
+        .from('wallets')
+        .select('balance')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!walletError && wallet) {
+        setWalletBalance(wallet.balance);
+      }
     } catch (error) {
       console.error('Error fetching cart:', error);
       toast({ title: 'Error loading cart', variant: 'destructive' });
@@ -137,6 +149,20 @@ const Checkout = () => {
         acc[item.shop_id].push(item);
         return acc;
       }, {} as Record<string, CartItem[]>);
+
+      // Check wallet balance if wallet payment selected
+      if (paymentMethod === 'wallet') {
+        const totalOrderAmount = getTotalPrice();
+        if (walletBalance < totalOrderAmount) {
+          toast({
+            title: 'Insufficient balance',
+            description: `You need ₹${(totalOrderAmount - walletBalance).toFixed(2)} more in your wallet`,
+            variant: 'destructive'
+          });
+          setLoading(false);
+          return;
+        }
+      }
 
       const createdOrders: Array<{ orderId: string; shopId: string; amount: number; shopName: string; upiId: string }> = [];
 
@@ -210,6 +236,54 @@ const Checkout = () => {
 
         if (itemsError) throw itemsError;
 
+        // Handle wallet payment
+        if (paymentMethod === 'wallet') {
+          // Check sufficient balance (should already be validated)
+          if (walletBalance < totalAmount) {
+            toast({
+              title: 'Insufficient balance',
+              description: 'Please add money to your wallet',
+              variant: 'destructive'
+            });
+            setLoading(false);
+            return;
+          }
+
+          // Deduct from wallet
+          const { error: walletError } = await supabase
+            .from('wallets')
+            .update({ 
+              balance: walletBalance - totalAmount 
+            })
+            .eq('user_id', user.id);
+
+          if (walletError) throw walletError;
+
+          // Update order payment status
+          await supabase
+            .from('orders')
+            .update({ 
+              payment_status: 'completed',
+              status: 'confirmed'
+            })
+            .eq('id', order.id);
+
+          // Create transaction record
+          if (currentUser) {
+            await supabase.from('transactions').insert({
+              user_id: currentUser.id,
+              shop_id: shopId,
+              order_id: order.id,
+              amount: totalAmount,
+              payment_method: 'wallet',
+              status: 'completed'
+            });
+          }
+
+          // Update local wallet balance
+          setWalletBalance(prev => prev - totalAmount);
+        }
+
         // Store order details for UPI redirect
         if ((paymentMethod === 'bank_upi' || paymentMethod === 'other_upi') && shop.upi_id) {
           createdOrders.push({
@@ -261,8 +335,17 @@ const Checkout = () => {
         
         return;
       }
+
+      // Show success message based on payment method
+      if (paymentMethod === 'wallet') {
+        toast({ 
+          title: 'Order placed successfully!',
+          description: 'Payment completed via Re:Wallet'
+        });
+      } else {
+        toast({ title: 'Order placed successfully!' });
+      }
       
-      toast({ title: 'Order placed successfully!' });
       navigate('/orders');
     } catch (error) {
       console.error('Error placing order:', error);
@@ -384,6 +467,28 @@ const Checkout = () => {
                       <span className="font-semibold">Other UPI Apps</span>
                     </div>
                     <div className="text-sm text-muted-foreground">GPay, PhonePe, Paytm, BHIM & more</div>
+                  </Label>
+                </div>
+
+                {/* Re:Wallet */}
+                <div className={`flex items-start space-x-3 border rounded-lg p-4 cursor-pointer ${
+                  walletBalance >= getTotalPrice() ? 'hover:bg-accent/50' : 'opacity-50'
+                }`}>
+                  <RadioGroupItem value="wallet" id="wallet" disabled={walletBalance < getTotalPrice()} className="mt-1" />
+                  <Label htmlFor="wallet" className="flex-1 cursor-pointer">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Wallet className="w-4 h-4" />
+                        <span className="font-semibold">Re:Wallet</span>
+                      </div>
+                      <span className="text-sm font-medium">₹{walletBalance.toFixed(2)}</span>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {walletBalance >= getTotalPrice() 
+                        ? 'Pay using your wallet balance' 
+                        : `Insufficient balance. Add ₹${(getTotalPrice() - walletBalance).toFixed(2)} more`
+                      }
+                    </div>
                   </Label>
                 </div>
 
