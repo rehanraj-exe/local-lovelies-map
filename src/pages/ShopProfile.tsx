@@ -235,6 +235,48 @@ const ShopProfile = () => {
     }
   };
 
+  const handleShare = async () => {
+    if (!shop) return;
+
+    const shareUrl = window.location.href;
+    const shareTitle = shop.name;
+    const shareText = `Check out ${shop.name} - ${shop.description || shop.category}`;
+
+    // Track share action for analytics
+    supabase.rpc('track_shop_click', { shop_uuid: shop.id });
+
+    // Check if Web Share API is available (mobile browsers)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl,
+        });
+        toast.success('Shared successfully!');
+      } catch (error) {
+        if ((error as Error).name !== 'AbortError') {
+          // Fallback to clipboard if share was not cancelled
+          copyToClipboard(shareUrl);
+        }
+      }
+    } else {
+      // Fallback for desktop: copy to clipboard
+      copyToClipboard(shareUrl);
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(
+      () => {
+        toast.success('Link copied to clipboard!');
+      },
+      () => {
+        toast.error('Failed to copy link');
+      }
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -297,10 +339,15 @@ const ShopProfile = () => {
 
         {/* Action Buttons */}
         <div className="absolute top-6 right-6 flex gap-2">
-          <Button variant="secondary" size="icon" className="rounded-full shadow-medium">
+          <Button 
+            variant="secondary" 
+            size="icon" 
+            className="rounded-full shadow-medium hover:shadow-glow transition-all hover:scale-110"
+            onClick={handleShare}
+          >
             <Share2 className="w-5 h-5" />
           </Button>
-          <Button variant="secondary" size="icon" className="rounded-full shadow-medium">
+          <Button variant="secondary" size="icon" className="rounded-full shadow-medium hover:shadow-glow transition-all hover:scale-110">
             <Heart className="w-5 h-5" />
           </Button>
         </div>
@@ -370,7 +417,7 @@ const ShopProfile = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-4">
+            <div className="grid grid-cols-3 gap-3 pt-4">
               <Button className="bg-primary hover:bg-primary/90" onClick={handleCallClick}>
                 <Phone className="w-4 h-4 mr-2" />
                 Call
@@ -379,8 +426,10 @@ const ShopProfile = () => {
                 <MapPin className="w-4 h-4 mr-2" />
                 Directions
               </Button>
-              <Button variant="outline">Order</Button>
-              <Button variant="outline">Share</Button>
+              <Button variant="outline" onClick={handleShare}>
+                <Share2 className="w-4 h-4 mr-2" />
+                Share
+              </Button>
             </div>
           </div>
 
