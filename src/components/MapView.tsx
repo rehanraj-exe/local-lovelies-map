@@ -40,7 +40,9 @@ const MapView = ({ onShopClick, shops = [] }: MapViewProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const userMarkerRef = useRef<L.Marker | null>(null);
+  const markersRef = useRef<Map<string, { marker: L.Marker; type: string }>>(new Map());
   const [isNearbyMode, setIsNearbyMode] = useState(false);
+  const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
 
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
@@ -78,9 +80,11 @@ const MapView = ({ onShopClick, shops = [] }: MapViewProps) => {
     };
 
     // Add markers for shops with color coding
+    markersRef.current.clear();
     shops.forEach((shop) => {
       let color: string;
       let label: string;
+      let type: string;
       
       // Check if shop has active offers and if it's new
       const hasActiveOffer = shop.verified && Math.random() > 0.7; // 30% have active deals
@@ -89,15 +93,19 @@ const MapView = ({ onShopClick, shops = [] }: MapViewProps) => {
       if (hasActiveOffer) {
         color = '#ef4444'; // Red for shops with active deals
         label = '🔥 DEAL';
+        type = 'deal';
       } else if (isNew) {
         color = '#3b82f6'; // Blue for new shops
         label = '✨ NEW';
+        type = 'new';
       } else if (shop.open_now) {
         color = '#22c55e'; // Green for open shops
         label = 'OPEN';
+        type = 'open';
       } else {
         color = '#eab308'; // Yellow for closed shops
         label = 'CLOSED';
+        type = 'closed';
       }
 
       const marker = L.marker([shop.latitude, shop.longitude], {
@@ -114,6 +122,9 @@ const MapView = ({ onShopClick, shops = [] }: MapViewProps) => {
         direction: 'top',
         className: 'custom-tooltip',
       });
+
+      // Store marker with its type
+      markersRef.current.set(shop.id, { marker, type });
     });
 
     return () => {
@@ -121,8 +132,20 @@ const MapView = ({ onShopClick, shops = [] }: MapViewProps) => {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
       }
+      markersRef.current.clear();
     };
   }, [onShopClick, shops]);
+
+  // Update marker visibility based on filter
+  useEffect(() => {
+    markersRef.current.forEach(({ marker, type }) => {
+      if (selectedFilter === null || type === selectedFilter) {
+        marker.setOpacity(1);
+      } else {
+        marker.setOpacity(0.2);
+      }
+    });
+  }, [selectedFilter]);
 
   const recenterToUserLocation = () => {
     if (!mapInstanceRef.current) return;
@@ -181,23 +204,43 @@ const MapView = ({ onShopClick, shops = [] }: MapViewProps) => {
           Map Legend
         </h3>
         <div className="space-y-2 text-xs">
-          <div className="flex items-center gap-2">
+          <button
+            onClick={() => setSelectedFilter(selectedFilter === 'deal' ? null : 'deal')}
+            className={`flex items-center gap-2 w-full hover:bg-primary/10 p-2 rounded-lg transition-colors ${selectedFilter === 'deal' ? 'bg-primary/20 ring-2 ring-primary' : ''}`}
+          >
             <div className="w-6 h-6 rounded-full bg-[#ef4444] border-2 border-white shadow-glow"></div>
             <span className="font-medium text-foreground">Active Deal</span>
-          </div>
-          <div className="flex items-center gap-2">
+          </button>
+          <button
+            onClick={() => setSelectedFilter(selectedFilter === 'new' ? null : 'new')}
+            className={`flex items-center gap-2 w-full hover:bg-primary/10 p-2 rounded-lg transition-colors ${selectedFilter === 'new' ? 'bg-primary/20 ring-2 ring-primary' : ''}`}
+          >
             <div className="w-6 h-6 rounded-full bg-[#3b82f6] border-2 border-white shadow-glow"></div>
             <span className="font-medium text-foreground">New Shop</span>
-          </div>
-          <div className="flex items-center gap-2">
+          </button>
+          <button
+            onClick={() => setSelectedFilter(selectedFilter === 'open' ? null : 'open')}
+            className={`flex items-center gap-2 w-full hover:bg-primary/10 p-2 rounded-lg transition-colors ${selectedFilter === 'open' ? 'bg-primary/20 ring-2 ring-primary' : ''}`}
+          >
             <div className="w-6 h-6 rounded-full bg-[#22c55e] border-2 border-white shadow-glow"></div>
             <span className="font-medium text-foreground">Open Now</span>
-          </div>
-          <div className="flex items-center gap-2">
+          </button>
+          <button
+            onClick={() => setSelectedFilter(selectedFilter === 'closed' ? null : 'closed')}
+            className={`flex items-center gap-2 w-full hover:bg-primary/10 p-2 rounded-lg transition-colors ${selectedFilter === 'closed' ? 'bg-primary/20 ring-2 ring-primary' : ''}`}
+          >
             <div className="w-6 h-6 rounded-full bg-[#eab308] border-2 border-white shadow-glow"></div>
             <span className="font-medium text-foreground">Currently Closed</span>
-          </div>
+          </button>
         </div>
+        {selectedFilter && (
+          <button
+            onClick={() => setSelectedFilter(null)}
+            className="mt-3 w-full text-xs text-primary hover:text-primary/80 font-medium"
+          >
+            Clear Filter
+          </button>
+        )}
       </div>
 
       {/* Recenter Button with glow effect */}
