@@ -33,7 +33,8 @@ const Checkout = () => {
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
   const [notes, setNotes] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'upi'>('cod');
+  const [paymentMethod, setPaymentMethod] = useState<'bank_upi' | 'other_upi' | 'emi' | 'cod'>('cod');
+  const [selectedBank, setSelectedBank] = useState('');
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -150,10 +151,21 @@ const Checkout = () => {
         if (shopError) throw shopError;
 
         // If UPI payment and shop doesn't have UPI ID, show error
-        if (paymentMethod === 'upi' && !shop.upi_id) {
+        if ((paymentMethod === 'bank_upi' || paymentMethod === 'other_upi') && !shop.upi_id) {
           toast({ 
             title: 'UPI not available', 
             description: `${shop.name} doesn't accept UPI payments yet`,
+            variant: 'destructive' 
+          });
+          setLoading(false);
+          return;
+        }
+
+        // If bank UPI selected but no bank chosen, show error
+        if (paymentMethod === 'bank_upi' && !selectedBank) {
+          toast({ 
+            title: 'Please select a bank', 
+            description: 'Choose your bank to proceed with UPI payment',
             variant: 'destructive' 
           });
           setLoading(false);
@@ -171,9 +183,9 @@ const Checkout = () => {
             delivery_phone: phone,
             delivery_notes: notes,
             status: 'pending',
-            payment_method: paymentMethod,
+            payment_method: paymentMethod === 'bank_upi' || paymentMethod === 'other_upi' ? 'upi' : paymentMethod,
             payment_status: 'pending',
-            payment_id: paymentMethod === 'upi' ? shop.upi_id : null
+            payment_id: (paymentMethod === 'bank_upi' || paymentMethod === 'other_upi') ? shop.upi_id : null
           })
           .select()
           .single();
@@ -206,7 +218,7 @@ const Checkout = () => {
       toast({ title: 'Order placed successfully!' });
       
       // If UPI payment, redirect to UPI for the first shop
-      if (paymentMethod === 'upi') {
+      if (paymentMethod === 'bank_upi' || paymentMethod === 'other_upi') {
         const firstShopId = Object.keys(itemsByShop)[0];
         const { data: shop } = await supabase
           .from('shops')
@@ -284,39 +296,92 @@ const Checkout = () => {
             <CardHeader>
               <CardTitle>Payment Method</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <RadioGroup value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as 'cod' | 'upi')}>
-                <div className="flex items-center space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-accent/50">
-                  <RadioGroupItem value="cod" id="cod" />
-                  <Label htmlFor="cod" className="flex-1 cursor-pointer">
-                    <div className="font-semibold">Cash on Delivery</div>
-                    <div className="text-sm text-muted-foreground">Pay when you receive</div>
-                  </Label>
+            <CardContent className="space-y-3">
+              <RadioGroup value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as any)}>
+                {/* Bank UPI */}
+                <div className="border rounded-lg">
+                  <div className="flex items-start space-x-3 p-4 cursor-pointer hover:bg-accent/50" onClick={() => setPaymentMethod('bank_upi')}>
+                    <RadioGroupItem value="bank_upi" id="bank_upi" className="mt-1" />
+                    <Label htmlFor="bank_upi" className="flex-1 cursor-pointer">
+                      <div className="font-semibold">Your Bank</div>
+                      <div className="text-sm text-muted-foreground mb-3">Pay via your bank's UPI</div>
+                      {paymentMethod === 'bank_upi' && (
+                        <select 
+                          value={selectedBank}
+                          onChange={(e) => setSelectedBank(e.target.value)}
+                          className="w-full p-2 border rounded bg-background text-sm"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <option value="">Select your bank</option>
+                          <option value="airtel">Airtel Payments Bank</option>
+                          <option value="axis">Axis Bank</option>
+                          <option value="hdfc">HDFC Bank</option>
+                          <option value="icici">ICICI Bank</option>
+                          <option value="kotak">Kotak Bank</option>
+                          <option value="sbi">State Bank of India</option>
+                          <option value="allahabad">Allahabad Bank</option>
+                          <option value="andhra">Andhra Bank</option>
+                          <option value="boi">Bank of India</option>
+                          <option value="bom">Bank of Maharashtra</option>
+                          <option value="canara">Canara Bank</option>
+                          <option value="catholic">Catholic Syrian Bank</option>
+                          <option value="central">Central Bank of India</option>
+                          <option value="city_union">City Union Bank</option>
+                          <option value="corporation">Corporation Bank</option>
+                          <option value="cosmos">Cosmos Bank</option>
+                          <option value="dena">Dena Bank</option>
+                          <option value="federal">Federal Bank</option>
+                          <option value="idbi">IDBI Bank</option>
+                          <option value="indian">Indian Bank</option>
+                          <option value="indusind">IndusInd Bank</option>
+                          <option value="pnb">Punjab National Bank</option>
+                          <option value="rbl">RBL Bank</option>
+                          <option value="syndicate">Syndicate Bank</option>
+                          <option value="uco">UCO Bank</option>
+                          <option value="union">Union Bank of India</option>
+                          <option value="yes">YES Bank</option>
+                        </select>
+                      )}
+                    </Label>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-accent/50">
-                  <RadioGroupItem value="upi" id="upi" />
-                  <Label htmlFor="upi" className="flex-1 cursor-pointer">
+
+                {/* Other UPI Apps */}
+                <div className="flex items-start space-x-3 border rounded-lg p-4 cursor-pointer hover:bg-accent/50">
+                  <RadioGroupItem value="other_upi" id="other_upi" className="mt-1" />
+                  <Label htmlFor="other_upi" className="flex-1 cursor-pointer">
                     <div className="flex items-center gap-2">
                       <Smartphone className="w-4 h-4" />
-                      <span className="font-semibold">UPI Payment</span>
+                      <span className="font-semibold">Other UPI Apps</span>
                     </div>
-                    <div className="text-sm text-muted-foreground">Pay via UPI apps</div>
+                    <div className="text-sm text-muted-foreground">GPay, PhonePe, Paytm, BHIM & more</div>
+                  </Label>
+                </div>
+
+                {/* EMI - Unavailable */}
+                <div className="flex items-start space-x-3 border rounded-lg p-4 opacity-50">
+                  <RadioGroupItem value="emi" id="emi" disabled className="mt-1" />
+                  <Label htmlFor="emi" className="flex-1">
+                    <div className="font-semibold">EMI Unavailable <span className="text-xs text-primary cursor-pointer">Why?</span></div>
+                    <div className="text-sm text-muted-foreground">Not available for this order</div>
+                  </Label>
+                </div>
+
+                {/* Cash on Delivery */}
+                <div className="flex items-start space-x-3 border rounded-lg p-4 cursor-pointer hover:bg-accent/50">
+                  <RadioGroupItem value="cod" id="cod" className="mt-1" />
+                  <Label htmlFor="cod" className="flex-1 cursor-pointer">
+                    <div className="font-semibold">Cash on Delivery/Pay on Delivery</div>
+                    <div className="text-sm text-muted-foreground">
+                      Cash, UPI and Cards accepted. <span className="text-primary cursor-pointer">Know more.</span>
+                    </div>
                   </Label>
                 </div>
               </RadioGroup>
 
-              {paymentMethod === 'upi' && (
-                <div className="space-y-3 animate-in fade-in-50">
-                  <div className="flex gap-2 flex-wrap">
-                    <div className="text-xs text-muted-foreground w-full mb-1">You will be redirected to:</div>
-                    <div className="px-3 py-1 bg-muted rounded text-xs">GPay</div>
-                    <div className="px-3 py-1 bg-muted rounded text-xs">PhonePe</div>
-                    <div className="px-3 py-1 bg-muted rounded text-xs">Paytm</div>
-                    <div className="px-3 py-1 bg-muted rounded text-xs">BHIM</div>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Complete payment using any UPI app on your device
-                  </p>
+              {(paymentMethod === 'bank_upi' || paymentMethod === 'other_upi') && (
+                <div className="p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground animate-in fade-in-50">
+                  You will be redirected to complete payment via UPI
                 </div>
               )}
             </CardContent>
