@@ -12,12 +12,13 @@ import { Cart } from '@/components/Cart';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, User, Grid, Map, Briefcase, Store, LogOut, Clock, Filter, Package, Wallet, Crown, Sparkles, Check, MapPin, Mic, Loader2 } from 'lucide-react';
+import { Search, User, Grid, Map, Briefcase, Store, LogOut, Clock, Filter, Package, Wallet, Crown, Sparkles, Check, MapPin, Mic, Loader2, Camera } from 'lucide-react';
 import heroImage from '@/assets/hero-town.jpg';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useVoiceRecording } from '@/hooks/useVoiceRecording';
+import { useImageSearch } from '@/hooks/useImageSearch';
 
 interface Shop {
   id: string;
@@ -50,8 +51,9 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [mapFilter, setMapFilter] = useState<'all' | 'deals' | 'new' | 'open' | 'closed'>('all');
   
-  // Voice recording hook
-  const { isRecording, isProcessing, startRecording, stopRecording } = useVoiceRecording();
+  // Voice recording and image search hooks
+  const { isRecording, isProcessing: isVoiceProcessing, startRecording, stopRecording } = useVoiceRecording();
+  const { isProcessing: isImageProcessing, captureFromCamera, selectFromGallery, searchByImage } = useImageSearch();
 
   const handleVoiceSearch = async () => {
     if (isRecording) {
@@ -63,6 +65,24 @@ const Index = () => {
       }
     } else {
       startRecording();
+    }
+  };
+
+  const handleImageSearch = async () => {
+    // Show options: camera or gallery
+    const useCamera = window.confirm('Use camera? (Click OK for camera, Cancel for gallery)');
+    
+    const imageData = useCamera 
+      ? await captureFromCamera()
+      : await selectFromGallery();
+    
+    if (imageData) {
+      const results = await searchByImage(imageData);
+      if (results.matches && results.matches.length > 0) {
+        // Update search query with product name
+        setSearchQuery(results.analysis?.productName || 'Image search results');
+        setViewMode('list'); // Switch to list view to show results
+      }
     }
   };
 
@@ -172,12 +192,26 @@ const Index = () => {
               <Button
                 variant="outline"
                 size="icon"
+                onClick={handleImageSearch}
+                disabled={isImageProcessing}
+                className={`rounded-full transition-all ${isImageProcessing ? 'opacity-50' : ''}`}
+                title="Search by image"
+              >
+                {isImageProcessing ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Camera className="w-5 h-5" />
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
                 onClick={handleVoiceSearch}
-                disabled={isProcessing}
-                className={`rounded-full transition-all ${isRecording ? 'bg-destructive text-destructive-foreground animate-pulse' : ''} ${isProcessing ? 'opacity-50' : ''}`}
+                disabled={isVoiceProcessing}
+                className={`rounded-full transition-all ${isRecording ? 'bg-destructive text-destructive-foreground animate-pulse' : ''} ${isVoiceProcessing ? 'opacity-50' : ''}`}
                 title={isRecording ? 'Stop recording' : 'Start voice search'}
               >
-                {isProcessing ? (
+                {isVoiceProcessing ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   <Mic className={`w-5 h-5 ${isRecording ? 'animate-pulse' : ''}`} />
