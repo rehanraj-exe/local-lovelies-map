@@ -34,7 +34,6 @@ const Checkout = () => {
   const [phone, setPhone] = useState('');
   const [notes, setNotes] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'cod' | 'upi'>('cod');
-  const [upiId, setUpiId] = useState('');
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -106,11 +105,10 @@ const Checkout = () => {
     return cartItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
   };
 
-  const generateUpiUrl = (amount: number) => {
-    const merchantName = 'LocalShops';
+  const generateUpiUrl = (amount: number, shopUpiId: string, shopName: string) => {
     const upiParams = new URLSearchParams({
-      pa: upiId || 'merchant@upi', // Payee UPI ID
-      pn: merchantName,
+      pa: shopUpiId,
+      pn: shopName,
       am: amount.toString(),
       cu: 'INR',
       tn: `Payment for order`
@@ -121,11 +119,6 @@ const Checkout = () => {
   const handlePlaceOrder = async () => {
     if (!address.trim() || !phone.trim()) {
       toast({ title: 'Please fill in all required fields', variant: 'destructive' });
-      return;
-    }
-
-    if (paymentMethod === 'upi' && !upiId.trim()) {
-      toast({ title: 'Please enter UPI ID', variant: 'destructive' });
       return;
     }
 
@@ -147,6 +140,26 @@ const Checkout = () => {
       for (const [shopId, items] of Object.entries(itemsByShop)) {
         const totalAmount = items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
 
+        // Get shop details including UPI ID
+        const { data: shop, error: shopError } = await supabase
+          .from('shops')
+          .select('upi_id, name')
+          .eq('id', shopId)
+          .single();
+
+        if (shopError) throw shopError;
+
+        // If UPI payment and shop doesn't have UPI ID, show error
+        if (paymentMethod === 'upi' && !shop.upi_id) {
+          toast({ 
+            title: 'UPI not available', 
+            description: `${shop.name} doesn't accept UPI payments yet`,
+            variant: 'destructive' 
+          });
+          setLoading(false);
+          return;
+        }
+
         // Create order
         const { data: order, error: orderError } = await supabase
           .from('orders')
@@ -159,8 +172,8 @@ const Checkout = () => {
             delivery_notes: notes,
             status: 'pending',
             payment_method: paymentMethod,
-            payment_status: paymentMethod === 'cod' ? 'pending' : 'pending',
-            payment_id: paymentMethod === 'upi' ? upiId : null
+            payment_status: 'pending',
+            payment_id: paymentMethod === 'upi' ? shop.upi_id : null
           })
           .select()
           .single();
@@ -190,14 +203,25 @@ const Checkout = () => {
 
       if (deleteError) throw deleteError;
 
-      // If UPI payment, open UPI app
-      if (paymentMethod === 'upi') {
-        const totalAmount = getTotalPrice();
-        const upiUrl = generateUpiUrl(totalAmount);
-        window.location.href = upiUrl;
-      }
-
       toast({ title: 'Order placed successfully!' });
+      
+      // If UPI payment, redirect to UPI for the first shop
+      if (paymentMethod === 'upi') {
+        const firstShopId = Object.keys(itemsByShop)[0];
+        const { data: shop } = await supabase
+          .from('shops')
+          .select('upi_id, name')
+          .eq('id', firstShopId)
+          .single();
+        
+        if (shop?.upi_id) {
+          const totalAmount = getTotalPrice();
+          const upiUrl = generateUpiUrl(totalAmount, shop.upi_id, shop.name);
+          window.location.href = upiUrl;
+          return;
+        }
+      }
+      
       navigate('/orders');
     } catch (error) {
       console.error('Error placing order:', error);
@@ -283,26 +307,16 @@ const Checkout = () => {
 
               {paymentMethod === 'upi' && (
                 <div className="space-y-3 animate-in fade-in-50">
-                  <div>
-                    <Label htmlFor="upiId">Enter Merchant UPI ID *</Label>
-                    <Input
-                      id="upiId"
-                      type="text"
-                      placeholder="merchant@upi"
-                      value={upiId}
-                      onChange={(e) => setUpiId(e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Enter the shop's UPI ID for payment
-                    </p>
-                  </div>
                   <div className="flex gap-2 flex-wrap">
-                    <div className="text-xs text-muted-foreground w-full mb-1">Popular UPI apps:</div>
+                    <div className="text-xs text-muted-foreground w-full mb-1">You will be redirected to:</div>
                     <div className="px-3 py-1 bg-muted rounded text-xs">GPay</div>
                     <div className="px-3 py-1 bg-muted rounded text-xs">PhonePe</div>
                     <div className="px-3 py-1 bg-muted rounded text-xs">Paytm</div>
                     <div className="px-3 py-1 bg-muted rounded text-xs">BHIM</div>
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    Complete payment using any UPI app on your device
+                  </p>
                 </div>
               )}
             </CardContent>

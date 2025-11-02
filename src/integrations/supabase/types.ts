@@ -470,6 +470,7 @@ export type Database = {
           subcategory: string | null
           tags: string[] | null
           updated_at: string
+          upi_id: string | null
           verified: boolean | null
         }
         Insert: {
@@ -496,6 +497,7 @@ export type Database = {
           subcategory?: string | null
           tags?: string[] | null
           updated_at?: string
+          upi_id?: string | null
           verified?: boolean | null
         }
         Update: {
@@ -522,6 +524,7 @@ export type Database = {
           subcategory?: string | null
           tags?: string[] | null
           updated_at?: string
+          upi_id?: string | null
           verified?: boolean | null
         }
         Relationships: []
