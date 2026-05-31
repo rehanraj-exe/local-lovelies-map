@@ -49,6 +49,12 @@ const ShopRegistration = () => {
       return;
     }
 
+    const validation = shopSchema.safeParse(formData);
+    if (!validation.success) {
+      toast.error(validation.error.errors[0].message);
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -56,11 +62,12 @@ const ShopRegistration = () => {
         .from('shops')
         .insert([
           {
-            ...formData,
+            ...validation.data,
             owner_id: user.id,
             verified: false,
           }
         ]);
+
 
       if (error) throw error;
 
