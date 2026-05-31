@@ -62,11 +62,18 @@ const ShopRegistration = () => {
         .from('shops')
         .insert([
           {
-            ...validation.data,
+            name: validation.data.name,
+            category: validation.data.category,
+            description: validation.data.description || null,
+            address: validation.data.address,
+            latitude: validation.data.latitude,
+            longitude: validation.data.longitude,
+            phone: validation.data.phone,
             owner_id: user.id,
             verified: false,
           }
         ]);
+
 
 
       if (error) throw error;
