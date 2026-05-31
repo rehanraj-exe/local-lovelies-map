@@ -531,6 +531,27 @@ export type Database = {
           },
         ]
       }
+      shop_payment_info: {
+        Row: {
+          created_at: string
+          shop_id: string
+          updated_at: string
+          upi_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          shop_id: string
+          updated_at?: string
+          upi_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          shop_id?: string
+          updated_at?: string
+          upi_id?: string | null
+        }
+        Relationships: []
+      }
       shops: {
         Row: {
           address: string
@@ -556,7 +577,6 @@ export type Database = {
           subcategory: string | null
           tags: string[] | null
           updated_at: string
-          upi_id: string | null
           verified: boolean | null
         }
         Insert: {
@@ -583,7 +603,6 @@ export type Database = {
           subcategory?: string | null
           tags?: string[] | null
           updated_at?: string
-          upi_id?: string | null
           verified?: boolean | null
         }
         Update: {
@@ -610,7 +629,6 @@ export type Database = {
           subcategory?: string | null
           tags?: string[] | null
           updated_at?: string
-          upi_id?: string | null
           verified?: boolean | null
         }
         Relationships: []

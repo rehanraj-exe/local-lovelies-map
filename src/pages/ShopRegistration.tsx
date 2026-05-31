@@ -8,8 +8,21 @@ import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { ArrowLeft } from 'lucide-react';
+import { z } from 'zod';
 
 const categories = ['Bakery', 'Café', 'Clothing', 'Grocery', 'Bookstore', 'Restaurant', 'Services', 'Other'];
+
+const shopSchema = z.object({
+  name: z.string().trim().min(1, 'Shop name is required').max(100, 'Name must be under 100 characters'),
+  category: z.string().min(1, 'Category is required').max(50),
+  description: z.string().trim().max(1000, 'Description must be under 1000 characters').optional().or(z.literal('')),
+  address: z.string().trim().min(5, 'Address is too short').max(300),
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+  phone: z.string().trim().regex(/^\+?[0-9 \-()]{7,20}$/, 'Invalid phone number'),
+  hours: z.string().trim().max(100).optional().or(z.literal('')),
+});
+
 
 const ShopRegistration = () => {
   const navigate = useNavigate();
@@ -36,6 +49,12 @@ const ShopRegistration = () => {
       return;
     }
 
+    const validation = shopSchema.safeParse(formData);
+    if (!validation.success) {
+      toast.error(validation.error.errors[0].message);
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -43,11 +62,19 @@ const ShopRegistration = () => {
         .from('shops')
         .insert([
           {
-            ...formData,
+            name: validation.data.name,
+            category: validation.data.category,
+            description: validation.data.description || null,
+            address: validation.data.address,
+            latitude: validation.data.latitude,
+            longitude: validation.data.longitude,
+            phone: validation.data.phone,
             owner_id: user.id,
             verified: false,
           }
         ]);
+
+
 
       if (error) throw error;
 

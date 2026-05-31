@@ -220,14 +220,23 @@ const Checkout = () => {
         const currentUser = (await supabase.auth.getUser()).data.user;
         const totalAmount = items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
 
-        // Get shop details including UPI ID
-        const { data: shop, error: shopError } = await supabase
+        // Get shop details
+        const { data: shopData, error: shopError } = await supabase
           .from('shops')
-          .select('upi_id, name')
+          .select('name')
           .eq('id', shopId)
           .single();
 
         if (shopError) throw shopError;
+
+        // Get shop UPI from restricted payment info table (auth required)
+        const { data: paymentInfo } = await supabase
+          .from('shop_payment_info')
+          .select('upi_id')
+          .eq('shop_id', shopId)
+          .maybeSingle();
+
+        const shop = { name: shopData.name, upi_id: paymentInfo?.upi_id ?? null };
 
         // If UPI payment and shop doesn't have UPI ID, show error
         if ((paymentMethod === 'bank_upi' || paymentMethod === 'other_upi') && !shop.upi_id) {
@@ -239,6 +248,7 @@ const Checkout = () => {
           setLoading(false);
           return;
         }
+
 
         // If bank UPI selected but no bank chosen, show error
         if (paymentMethod === 'bank_upi' && !selectedBank) {
