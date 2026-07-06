@@ -16,7 +16,7 @@ export const VoiceSearch = ({ isOpen, onClose, onTranscript }: VoiceSearchProps)
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioLevel, setAudioLevel] = useState(0);
   const recognitionRef = useRef<any>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -50,23 +50,25 @@ export const VoiceSearch = ({ isOpen, onClose, onTranscript }: VoiceSearchProps)
 
       // Initialize audio visualization
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
       const audioContext = new AudioContext();
+      audioContextRef.current = audioContext;
       const source = audioContext.createMediaStreamSource(stream);
       const analyser = audioContext.createAnalyser();
       analyser.fftSize = 256;
       source.connect(analyser);
+      analyserRef.current = analyser;
 
       const dataArray = new Uint8Array(analyser.frequencyBinCount);
-      
-      const updateLevel = () => {
-        if (isRecording) {
-          analyser.getByteFrequencyData(dataArray);
-          const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
-          setAudioLevel(average);
-          requestAnimationFrame(updateLevel);
-        }
-      };
+      activeRef.current = true;
 
+      const updateLevel = () => {
+        if (!activeRef.current) return;
+        analyser.getByteFrequencyData(dataArray);
+        const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+        setAudioLevel(average);
+        rafRef.current = requestAnimationFrame(updateLevel);
+      };
       updateLevel();
 
       // Initialize speech recognition
@@ -129,7 +131,6 @@ export const VoiceSearch = ({ isOpen, onClose, onTranscript }: VoiceSearchProps)
       recognition.onend = () => {
         setIsRecording(false);
         if (timerRef.current) clearInterval(timerRef.current);
-        stream.getTracks().forEach(track => track.stop());
       };
 
       recognition.start();
@@ -143,8 +144,18 @@ export const VoiceSearch = ({ isOpen, onClose, onTranscript }: VoiceSearchProps)
   };
 
   const stopRecording = () => {
+    activeRef.current = false;
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
     if (recognitionRef.current) {
-      recognitionRef.current.stop();
+      try { recognitionRef.current.stop(); } catch {}
     }
     if (timerRef.current) {
       clearInterval(timerRef.current);
