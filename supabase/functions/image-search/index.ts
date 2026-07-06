@@ -88,22 +88,45 @@ Return a JSON object with: productName, category, subcategory, keywords (array),
     
     console.log('Image analysis:', analysis);
 
-    // Match shops based on analysis
-    const matchedShops = shops?.filter(shop => {
-      const categoryMatch = analysis.category && 
-        (shop.category?.toLowerCase().includes(analysis.category.toLowerCase()) ||
-         shop.subcategory?.toLowerCase().includes(analysis.category.toLowerCase()));
-      
-      const subcategoryMatch = analysis.subcategory &&
-        shop.subcategory?.toLowerCase().includes(analysis.subcategory.toLowerCase());
-      
-      const keywordMatch = analysis.keywords?.some((keyword: string) =>
-        shop.description?.toLowerCase().includes(keyword.toLowerCase()) ||
-        shop.tags?.some((tag: string) => tag.toLowerCase().includes(keyword.toLowerCase()))
-      );
+    // Match shops based on analysis (case-insensitive, keyword-based, scored)
+    const kw = [
+      analysis.productName,
+      analysis.category,
+      analysis.subcategory,
+      ...(Array.isArray(analysis.keywords) ? analysis.keywords : []),
+    ]
+      .filter(Boolean)
+      .map((s: string) => String(s).toLowerCase());
 
-      return categoryMatch || subcategoryMatch || keywordMatch;
-    }) || [];
+    const scored = (shops || []).map((shop) => {
+      const hay = [
+        shop.name,
+        shop.category,
+        shop.subcategory,
+        shop.description,
+        ...(Array.isArray(shop.tags) ? shop.tags : []),
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      let score = 0;
+      for (const term of kw) {
+        if (!term) continue;
+        if (hay.includes(term)) score += term === String(analysis.category).toLowerCase() ? 3 : 2;
+      }
+      return { shop, score };
+    });
+
+    let matchedShops = scored
+      .filter((s) => s.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map((s) => s.shop);
+
+    // Fallback: if nothing matched, return top shops so the UI isn't empty
+    if (matchedShops.length === 0) {
+      matchedShops = (shops || []).slice(0, 5);
+    }
 
     return new Response(
       JSON.stringify({
