@@ -19,6 +19,9 @@ export const VoiceSearch = ({ isOpen, onClose, onTranscript }: VoiceSearchProps)
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const activeRef = useRef(false);
 
   useEffect(() => {
     if (isOpen && !isRecording) {
