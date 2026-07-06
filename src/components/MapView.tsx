@@ -59,6 +59,10 @@ const MapView = ({ onShopClick, shops = [] }: MapViewProps) => {
       maxZoom: 19,
     }).addTo(map);
 
+    // Ensure correct sizing after container becomes visible
+    setTimeout(() => map.invalidateSize(), 200);
+
+
     // Create custom icons for different shop types with prominent colors
     const createCustomIcon = (color: string, label: string) => {
       return L.divIcon({
