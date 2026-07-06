@@ -3,6 +3,8 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { MapPin, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+
 
 interface Shop {
   id: string;
@@ -56,6 +58,10 @@ const MapView = ({ onShopClick, shops = [] }: MapViewProps) => {
       attribution: '© OpenStreetMap contributors',
       maxZoom: 19,
     }).addTo(map);
+
+    // Ensure correct sizing after container becomes visible
+    setTimeout(() => map.invalidateSize(), 200);
+
 
     // Create custom icons for different shop types with prominent colors
     const createCustomIcon = (color: string, label: string) => {
@@ -150,48 +156,75 @@ const MapView = ({ onShopClick, shops = [] }: MapViewProps) => {
   const recenterToUserLocation = () => {
     if (!mapInstanceRef.current) return;
 
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          const userLocation: [number, number] = [latitude, longitude];
-          
-          if (mapInstanceRef.current) {
-            mapInstanceRef.current.setView(userLocation, 15);
-            
-            // Remove old user marker if exists
-            if (userMarkerRef.current) {
-              userMarkerRef.current.remove();
-            }
-            
-            // Add new user marker
-            const userIcon = L.divIcon({
-              className: 'user-location-marker',
-              html: `
-                <div class="relative">
-                  <div class="w-5 h-5 rounded-full bg-primary border-4 border-white shadow-glow animate-pulse-soft"></div>
-                  <div class="absolute inset-0 w-5 h-5 rounded-full bg-primary/30 animate-ping"></div>
-                </div>
-              `,
-              iconSize: [20, 20],
-              iconAnchor: [10, 10],
-            });
-            
-            userMarkerRef.current = L.marker(userLocation, { icon: userIcon }).addTo(mapInstanceRef.current);
-            setIsNearbyMode(true);
-            setTimeout(() => setIsNearbyMode(false), 2000);
-          }
-        },
-        (error) => {
-          console.error('Error getting location:', error);
-          // Fallback to default location
-          if (mapInstanceRef.current) {
-            mapInstanceRef.current.setView([12.9716, 77.5946], 14);
-          }
-        }
-      );
+    if (!navigator.geolocation) {
+      toast.error('Location not supported', {
+        description: 'Your browser does not support geolocation.',
+      });
+      return;
     }
+
+    if (!window.isSecureContext) {
+      toast.error("Location needs HTTPS", {
+        description: 'Open this site over HTTPS to use location.',
+      });
+      return;
+    }
+
+    setIsNearbyMode(true);
+    const loadingToast = toast.loading('Finding your location...');
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        toast.dismiss(loadingToast);
+        const { latitude, longitude, accuracy } = position.coords;
+        const userLocation: [number, number] = [latitude, longitude];
+
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.setView(userLocation, 16, { animate: true });
+          mapInstanceRef.current.invalidateSize();
+
+          if (userMarkerRef.current) {
+            userMarkerRef.current.remove();
+          }
+
+          const userIcon = L.divIcon({
+            className: 'user-location-marker',
+            html: `
+              <div class="relative">
+                <div class="w-5 h-5 rounded-full bg-primary border-4 border-white shadow-glow animate-pulse-soft"></div>
+                <div class="absolute inset-0 w-5 h-5 rounded-full bg-primary/30 animate-ping"></div>
+              </div>
+            `,
+            iconSize: [20, 20],
+            iconAnchor: [10, 10],
+          });
+
+          userMarkerRef.current = L.marker(userLocation, { icon: userIcon })
+            .addTo(mapInstanceRef.current)
+            .bindTooltip('You are here', { direction: 'top' });
+
+          toast.success('Location found', {
+            description: `Accurate to ~${Math.round(accuracy)}m`,
+          });
+        }
+        setTimeout(() => setIsNearbyMode(false), 2000);
+      },
+      (error) => {
+        toast.dismiss(loadingToast);
+        setIsNearbyMode(false);
+        const messages: Record<number, string> = {
+          1: 'Permission denied. Enable location access in your browser settings.',
+          2: 'Location unavailable. Check your device GPS or network.',
+          3: 'Timed out getting location. Please try again.',
+        };
+        toast.error('Could not get your location', {
+          description: messages[error.code] || error.message,
+        });
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
   };
+
 
   return (
     <div className="relative w-full h-full">

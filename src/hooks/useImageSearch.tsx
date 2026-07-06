@@ -22,18 +22,21 @@ export const useImageSearch = () => {
 
       console.log('Image search results:', data);
 
+      const guess = data?.analysis?.guess || data?.analysis?.productName;
+
       if (!data?.matches || data.matches.length === 0) {
-        toast.info('No matches found', {
-          description: data?.analysis?.productName 
-            ? `Recognized: ${data.analysis.productName}, but no matching shops found`
-            : 'Try a different image or angle'
+        toast.info(guess ? `AI guess: ${guess}` : 'No matches found', {
+          description: guess
+            ? 'No matching shops found for this item'
+            : 'Try a different image or angle',
         });
         return { matches: [], analysis: data?.analysis };
       }
 
-      toast.success('Found matching shops!', {
-        description: `${data.matchCount} shops match your image`
+      toast.success(guess ? `AI guess: ${guess}` : 'Found matching shops!', {
+        description: `${data.matchCount} shops match your image`,
       });
+
 
       return data;
     } catch (error) {
