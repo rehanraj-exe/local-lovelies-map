@@ -49,13 +49,14 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a product recognition AI. Analyze the image and identify:
-1. The main product/item in the image
-2. Product category (e.g., electronics, clothing, food, books, etc.)
-3. Key features or characteristics
-4. Relevant keywords
+            content: `You are a product recognition AI. Analyze the image and return STRICT JSON with:
+- guess: a short 2-4 word plain-language guess of what the item is (e.g. "Blue notebook", "Running shoes", "Ceramic coffee mug")
+- productName: full product name
+- category: broad category (electronics, clothing, food, books, stationery, etc.)
+- subcategory: more specific type
+- keywords: array of 5-10 relevant search keywords
+- description: one short sentence describing the item`
 
-Return a JSON object with: productName, category, subcategory, keywords (array), description.`
           },
           {
             role: 'user',
