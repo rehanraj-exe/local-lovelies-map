@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { MapPin, Navigation } from 'lucide-react';
+import { MapPin, Navigation, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-
 
 interface Shop {
   id: string;
@@ -44,13 +43,15 @@ const MapView = ({ onShopClick, shops = [] }: MapViewProps) => {
   const userMarkerRef = useRef<L.Marker | null>(null);
   const markersRef = useRef<Map<string, { marker: L.Marker; type: string }>>(new Map());
   const [isNearbyMode, setIsNearbyMode] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
+  const accuracyCircleRef = useRef<L.Circle | null>(null);
 
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
-    // Initialize map
-    const map = L.map(mapRef.current).setView([28.6139, 77.2090], 14);
+    // Initialize map - center on India with a zoom to see all cities
+    const map = L.map(mapRef.current).setView([22.5, 78.5], 5);
     mapInstanceRef.current = map;
 
     // Add tile layer
@@ -133,6 +134,13 @@ const MapView = ({ onShopClick, shops = [] }: MapViewProps) => {
       markersRef.current.set(shop.id, { marker, type });
     });
 
+    // Auto-fit map to show all markers
+    if (shops.length > 0) {
+      const markerPositions = shops.map(shop => [shop.latitude, shop.longitude] as [number, number]);
+      const bounds = L.latLngBounds(markerPositions);
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
+    }
+
     return () => {
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
@@ -164,18 +172,20 @@ const MapView = ({ onShopClick, shops = [] }: MapViewProps) => {
     }
 
     if (!window.isSecureContext) {
-      toast.error("Location needs HTTPS", {
+      toast.error('Location needs HTTPS', {
         description: 'Open this site over HTTPS to use location.',
       });
       return;
     }
 
+    setIsLocating(true);
     setIsNearbyMode(true);
     const loadingToast = toast.loading('Finding your location...');
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
         toast.dismiss(loadingToast);
+        setIsLocating(false);
         const { latitude, longitude, accuracy } = position.coords;
         const userLocation: [number, number] = [latitude, longitude];
 
@@ -183,10 +193,24 @@ const MapView = ({ onShopClick, shops = [] }: MapViewProps) => {
           mapInstanceRef.current.setView(userLocation, 16, { animate: true });
           mapInstanceRef.current.invalidateSize();
 
+          // Remove old user marker and accuracy circle
           if (userMarkerRef.current) {
             userMarkerRef.current.remove();
           }
+          if (accuracyCircleRef.current) {
+            accuracyCircleRef.current.remove();
+          }
 
+          // Add accuracy circle (shows GPS precision)
+          accuracyCircleRef.current = L.circle(userLocation, {
+            radius: accuracy,
+            color: '#3b82f6',
+            fillColor: '#3b82f6',
+            fillOpacity: 0.1,
+            weight: 1,
+          }).addTo(mapInstanceRef.current);
+
+          // Add prominent user location marker
           const userIcon = L.divIcon({
             className: 'user-location-marker',
             html: `
@@ -201,7 +225,14 @@ const MapView = ({ onShopClick, shops = [] }: MapViewProps) => {
 
           userMarkerRef.current = L.marker(userLocation, { icon: userIcon })
             .addTo(mapInstanceRef.current)
-            .bindTooltip('You are here', { direction: 'top' });
+            .bindPopup(
+              `<div style="text-align: center; padding: 4px;">
+                <strong style="font-size: 14px;">📍 You are here</strong><br/>
+                <span style="font-size: 12px; color: #6b7280;">Accuracy: ~${Math.round(accuracy)}m</span>
+              </div>`,
+              { closeButton: false, offset: [0, -10] }
+            )
+            .openPopup();
 
           toast.success('Location found', {
             description: `Accurate to ~${Math.round(accuracy)}m`,
@@ -211,20 +242,30 @@ const MapView = ({ onShopClick, shops = [] }: MapViewProps) => {
       },
       (error) => {
         toast.dismiss(loadingToast);
+        setIsLocating(false);
         setIsNearbyMode(false);
-        const messages: Record<number, string> = {
-          1: 'Permission denied. Enable location access in your browser settings.',
-          2: 'Location unavailable. Check your device GPS or network.',
-          3: 'Timed out getting location. Please try again.',
-        };
+        
+        let message = 'An unknown error occurred. Please try again.';
+        if (error.code === error.PERMISSION_DENIED) {
+          message = 'Permission denied. Enable location access in your browser settings.';
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          message = 'Location unavailable. Check your device GPS or network.';
+        } else if (error.code === error.TIMEOUT) {
+          message = 'Timed out getting location. Please try again.';
+        }
+        
         toast.error('Could not get your location', {
-          description: messages[error.code] || error.message,
+          description: message,
         });
+
+        // Fallback to default location
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.setView([12.9716, 77.5946], 14);
+        }
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
     );
   };
-
 
   return (
     <div className="relative w-full h-full">
@@ -276,15 +317,20 @@ const MapView = ({ onShopClick, shops = [] }: MapViewProps) => {
         )}
       </div>
 
-      {/* Recenter Button with glow effect */}
+      {/* Reset View Button */}
       <button 
         className={`absolute top-6 right-6 bg-card/95 backdrop-blur-sm p-3 rounded-full shadow-glow border-2 border-primary/20 hover:bg-primary/10 transition-all ${isNearbyMode ? 'shadow-glow animate-pulse-soft' : ''}`}
         style={{ zIndex: 1000 }}
         onClick={() => {
-          if (mapInstanceRef.current) {
-            mapInstanceRef.current.setView([28.6139, 77.2090], 14);
+          if (mapInstanceRef.current && shops.length > 0) {
+            const markerPositions = shops.map(shop => [shop.latitude, shop.longitude] as [number, number]);
+            const bounds = L.latLngBounds(markerPositions);
+            mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
+          } else if (mapInstanceRef.current) {
+            mapInstanceRef.current.setView([22.5, 78.5], 5);
           }
         }}
+        title="Show all shops"
       >
         <MapPin className="w-6 h-6 text-primary" />
       </button>
@@ -292,12 +338,17 @@ const MapView = ({ onShopClick, shops = [] }: MapViewProps) => {
       {/* Explore Nearby Floating Button */}
       <Button
         onClick={recenterToUserLocation}
+        disabled={isLocating}
         className="absolute bottom-6 right-6 rounded-full shadow-glow hover:shadow-xl hover:scale-105 transition-all bg-primary text-primary-foreground font-semibold"
         style={{ zIndex: 1000 }}
         size="lg"
       >
-        <Navigation className="w-5 h-5 mr-2" />
-        Explore Nearby
+        {isLocating ? (
+          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+        ) : (
+          <Navigation className="w-5 h-5 mr-2" />
+        )}
+        {isLocating ? 'Locating...' : 'Explore Nearby'}
       </Button>
     </div>
   );

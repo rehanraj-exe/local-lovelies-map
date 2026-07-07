@@ -47,29 +47,74 @@ export const AIChatAssistant = () => {
     setIsLoading(true);
 
     try {
+      // Check if user is authenticated (edge function requires auth)
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: '🔒 Please sign in to use the AI assistant. You can sign in using the button in the top navigation bar!',
+          },
+        ]);
+        toast({
+          title: 'Sign in required',
+          description: 'Please sign in to chat with the Re:Local Assistant.',
+        });
+        setIsLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('ai-chat', {
         body: { message: messageText },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('AI chat error:', error);
+        // Check if it's an auth error
+        if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
+          throw new Error('auth');
+        }
+        throw error;
+      }
+
+      if (data?.error) {
+        console.error('AI chat server error:', data.error);
+        if (data.error.includes('LOVABLE_API_KEY')) {
+          throw new Error('api_key');
+        }
+        throw new Error(data.error);
+      }
 
       const assistantMessage: Message = {
         role: 'assistant',
         content: data.response || 'Sorry, I encountered an error. Please try again.',
       };
       setMessages((prev) => [...prev, assistantMessage]);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending message:', error);
+      
+      let errorMessage = 'Sorry, I encountered an error. Please try again later. 😔';
+      
+      if (error.message === 'auth') {
+        errorMessage = '🔒 Your session has expired. Please sign in again to continue chatting.';
+      } else if (error.message === 'api_key') {
+        errorMessage = '⚙️ The AI service is not configured yet. Please ensure the LOVABLE_API_KEY is set in your Supabase Edge Function secrets.';
+      } else if (error.message?.includes('FunctionsHttpError') || error.message?.includes('500')) {
+        errorMessage = '🔧 The AI service is temporarily unavailable. Please try again in a moment.';
+      }
+
       toast({
         title: 'Error',
-        description: 'Failed to send message. Please try again.',
+        description: 'Failed to get a response from the assistant.',
         variant: 'destructive',
       });
       setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
-          content: 'Sorry, I encountered an error. Please try again.',
+          content: errorMessage,
         },
       ]);
     } finally {

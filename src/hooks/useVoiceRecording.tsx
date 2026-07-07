@@ -8,12 +8,20 @@ export const useVoiceRecording = () => {
 
   const startRecording = async () => {
     try {
+      // Check secure context (required for getUserMedia)
+      if (!window.isSecureContext) {
+        toast.error('Secure connection required', {
+          description: 'Microphone access requires HTTPS or localhost. Please access the app via localhost:8080'
+        });
+        return;
+      }
+
       // Check if browser supports Speech Recognition
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       
       if (!SpeechRecognition) {
         toast.error('Speech recognition not supported', {
-          description: 'Your browser does not support voice search'
+          description: 'Your browser does not support voice search. Please use Chrome or Edge.'
         });
         return;
       }

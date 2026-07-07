@@ -130,6 +130,10 @@ const ShopQuickView = ({ shop, onClose }: ShopQuickViewProps) => {
             <Button
               variant="outline"
               className="gap-2"
+              onClick={() => {
+                const url = `https://www.google.com/maps/dir/?api=1&destination=${shop.latitude},${shop.longitude}`;
+                window.open(url, '_blank', 'noopener,noreferrer');
+              }}
             >
               <MapPin className="w-4 h-4" />
               Directions

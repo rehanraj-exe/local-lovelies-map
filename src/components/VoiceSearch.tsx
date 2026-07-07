@@ -37,19 +37,59 @@ export const VoiceSearch = ({ isOpen, onClose, onTranscript }: VoiceSearchProps)
 
   const startRecording = async () => {
     try {
-      // Check browser support
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      
-      if (!SpeechRecognition) {
-        toast.error('Speech recognition not supported', {
-          description: 'Your browser does not support voice search'
+      // Check secure context (required for getUserMedia)
+      if (!window.isSecureContext) {
+        toast.error('Secure connection required', {
+          description: 'Microphone access requires HTTPS or localhost. Please access the app via localhost:8080'
         });
         onClose();
         return;
       }
 
+      // Check if mediaDevices API is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        toast.error('Media devices not available', {
+          description: 'Your browser does not support microphone access'
+        });
+        onClose();
+        return;
+      }
+
+      // Check browser support for Speech Recognition
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      
+      if (!SpeechRecognition) {
+        toast.error('Speech recognition not supported', {
+          description: 'Your browser does not support voice search. Please use Chrome or Edge.'
+        });
+        onClose();
+        return;
+      }
+
+      // Request microphone permission first
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (permError: any) {
+        console.error('Microphone permission error:', permError);
+        if (permError.name === 'NotAllowedError' || permError.name === 'PermissionDeniedError') {
+          toast.error('Microphone access denied', {
+            description: 'Please allow microphone access in your browser settings and try again'
+          });
+        } else if (permError.name === 'NotFoundError') {
+          toast.error('No microphone found', {
+            description: 'Please connect a microphone and try again'
+          });
+        } else {
+          toast.error('Microphone error', {
+            description: `Could not access microphone: ${permError.message}`
+          });
+        }
+        onClose();
+        return;
+      }
+
       // Initialize audio visualization
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
       const audioContext = new AudioContext();
       audioContextRef.current = audioContext;

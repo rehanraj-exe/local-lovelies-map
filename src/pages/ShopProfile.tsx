@@ -74,7 +74,6 @@ const ShopProfile = () => {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [showDirections, setShowDirections] = useState(false);
   const [newReview, setNewReview] = useState({ rating: 5, comment: '' });
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [shopOwnerPlan, setShopOwnerPlan] = useState<string>('free');
@@ -225,7 +224,14 @@ const ShopProfile = () => {
       supabase.rpc('track_shop_click', { shop_uuid: shop.id });
       
       const url = `https://www.google.com/maps/dir/?api=1&destination=${shop.latitude},${shop.longitude}`;
-      window.open(url, '_blank');
+      // Use noopener,noreferrer to avoid iframe embedding issues
+      const newWindow = window.open(url, '_blank', 'noopener,noreferrer');
+      
+      // Fallback: if window.open was blocked by popup blocker or iframe
+      if (!newWindow) {
+        // Navigate the current tab instead
+        window.location.href = url;
+      }
     }
   };
 

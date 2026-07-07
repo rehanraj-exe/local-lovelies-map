@@ -29,6 +29,24 @@ export const CameraSearch = ({ isOpen, onClose, onImageCapture }: CameraSearchPr
 
   const startCamera = async () => {
     try {
+      // Check secure context (required for getUserMedia)
+      if (!window.isSecureContext) {
+        toast.error('Secure connection required', {
+          description: 'Camera access requires HTTPS or localhost. Please access the app via localhost:8080'
+        });
+        onClose();
+        return;
+      }
+
+      // Check if mediaDevices API is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        toast.error('Media devices not available', {
+          description: 'Your browser does not support camera access'
+        });
+        onClose();
+        return;
+      }
+
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: facingMode,
@@ -42,11 +60,25 @@ export const CameraSearch = ({ isOpen, onClose, onImageCapture }: CameraSearchPr
         videoRef.current.srcObject = mediaStream;
         videoRef.current.play();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Camera error:', error);
-      toast.error('Camera access denied', {
-        description: 'Please allow camera access to use this feature'
-      });
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        toast.error('Camera access denied', {
+          description: 'Please allow camera access in your browser settings and try again'
+        });
+      } else if (error.name === 'NotFoundError') {
+        toast.error('No camera found', {
+          description: 'Please connect a camera and try again'
+        });
+      } else if (error.name === 'NotReadableError') {
+        toast.error('Camera is in use', {
+          description: 'Another application may be using your camera'
+        });
+      } else {
+        toast.error('Camera error', {
+          description: `Could not access camera: ${error.message}`
+        });
+      }
       onClose();
     }
   };
