@@ -469,7 +469,10 @@ const Index = () => {
               key={category}
               variant={selectedCategory === category ? 'default' : 'outline'}
               className="cursor-pointer whitespace-nowrap px-4 py-2 rounded-full hover:shadow-soft transition-all"
-              onClick={() => setSelectedCategory(category)}
+              onClick={() => {
+                setSelectedCategory(category);
+                setSearchQuery('');
+              }}
             >
               {category}
             </Badge>
