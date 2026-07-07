@@ -33,27 +33,34 @@ export const LanguageSelector = () => {
   const [currentLang, setCurrentLang] = useState('en');
 
   useEffect(() => {
+    const initTranslateWidget = () => {
+      if (window.google && window.google.translate) {
+        const container = document.getElementById('google_translate_element');
+        if (container) container.innerHTML = '';
+        new window.google.translate.TranslateElement(
+          {
+            pageLanguage: 'en',
+            includedLanguages: LANGUAGES.map(l => l.code).join(','),
+            layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE,
+            autoDisplay: false,
+          },
+          'google_translate_element'
+        );
+      }
+    };
+
     // Check if script already exists to prevent duplicates
     if (!document.getElementById('google-translate-script')) {
-      window.googleTranslateElementInit = () => {
-        if (window.google && window.google.translate) {
-          new window.google.translate.TranslateElement(
-            {
-              pageLanguage: 'en',
-              includedLanguages: LANGUAGES.map(l => l.code).join(','),
-              layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE,
-              autoDisplay: false,
-            },
-            'google_translate_element'
-          );
-        }
-      };
+      window.googleTranslateElementInit = initTranslateWidget;
 
       const addScript = document.createElement('script');
       addScript.id = 'google-translate-script';
       addScript.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
       addScript.async = true;
       document.body.appendChild(addScript);
+    } else {
+      // If script is already loaded, we just need to re-initialize the widget
+      setTimeout(initTranslateWidget, 100);
     }
 
     // Try to determine current language from cookie
@@ -70,11 +77,13 @@ export const LanguageSelector = () => {
     const select = document.querySelector('.goog-te-combo') as HTMLSelectElement;
     if (select) {
       select.value = langCode;
-      select.dispatchEvent(new Event('change'));
+      select.dispatchEvent(new Event('change', { bubbles: true }));
     } else {
       // Fallback if widget hasn't fully loaded but script exists: Set cookie and reload
       document.cookie = `googtrans=/en/${langCode}; path=/`;
-      document.cookie = `googtrans=/en/${langCode}; domain=.${window.location.hostname}; path=/`;
+      if (window.location.hostname !== 'localhost') {
+        document.cookie = `googtrans=/en/${langCode}; domain=.${window.location.hostname}; path=/`;
+      }
       window.location.reload();
     }
   };
