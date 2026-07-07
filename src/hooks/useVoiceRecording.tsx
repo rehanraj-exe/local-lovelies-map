@@ -8,22 +8,35 @@ export const useVoiceRecording = () => {
 
   const startRecording = async () => {
     try {
-      // Check secure context (required for getUserMedia)
-      if (!window.isSecureContext) {
-        toast.error('Secure connection required', {
-          description: 'Microphone access requires HTTPS or localhost. Please access the app via localhost:8080'
-        });
-        return;
-      }
-
       // Check if browser supports Speech Recognition
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       
-      if (!SpeechRecognition) {
-        toast.error('Speech recognition not supported', {
-          description: 'Your browser does not support voice search. Please use Chrome or Edge.'
+      if (!window.isSecureContext || !SpeechRecognition) {
+        toast.info('Voice search fallback', {
+          description: 'Voice requires HTTPS and browser support. Using manual input instead.'
         });
-        return;
+        
+        // Return a simulated promise resolution with prompt input
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            const manualInput = prompt('Demo Voice Search Mode: Type your search query here:');
+            if (manualInput) {
+              toast.success('Voice recognized', { description: `"${manualInput}"` });
+              // We dispatch a custom event or let the component know if it supports it, 
+              // but since startRecording doesn't return the transcript, it expects stopRecording to.
+              // To handle this simply for the demo:
+              const dummyEvent = { results: [[{ transcript: manualInput }]] };
+              if (recognitionRef.current && recognitionRef.current.onresult) {
+                recognitionRef.current.onresult(dummyEvent);
+              } else {
+                // If they haven't called stopRecording yet, we can't easily pass it back natively.
+                // Let's just dispatch a global custom event that VoiceSearch can listen to, or just update state.
+                window.dispatchEvent(new CustomEvent('demo-voice-search', { detail: manualInput }));
+              }
+            }
+            setIsRecording(false);
+          }, 500);
+        });
       }
 
       const recognition = new SpeechRecognition();

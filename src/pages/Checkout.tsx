@@ -323,7 +323,7 @@ const Checkout = () => {
             .from('orders')
             .update({ 
               payment_status: 'completed',
-              status: 'confirmed'
+              status: 'preparing'
             })
             .eq('id', order.id);
 

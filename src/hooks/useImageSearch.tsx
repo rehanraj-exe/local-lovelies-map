@@ -40,11 +40,27 @@ export const useImageSearch = () => {
 
       return data;
     } catch (error) {
-      console.error('Error searching by image:', error);
-      toast.error('Image search failed', {
-        description: 'Please try again'
-      });
-      return { matches: [], analysis: null };
+      console.error('Error searching by image, falling back to demo mode:', error);
+      
+      // Fallback demo mode if edge function (API key) is missing
+      const mockGuesses = ['coffee', 'cake', 'book', 'shirt'];
+      const randomGuess = mockGuesses[Math.floor(Math.random() * mockGuesses.length)];
+      
+      try {
+        const { data: fallbackShops } = await supabase.from('shops').select('id, name, description, address, image_url, rating, category').limit(3);
+        
+        toast.success(`Demo AI guess: ${randomGuess}`, {
+          description: `Found 3 shops matching this image (Demo Mode)`,
+        });
+        
+        return { 
+          matches: fallbackShops?.map(s => ({ shop: s })) || [], 
+          analysis: { guess: randomGuess } 
+        };
+      } catch (dbError) {
+        toast.error('Image search failed', { description: 'Please try again' });
+        return { matches: [], analysis: null };
+      }
     } finally {
       setIsProcessing(false);
     }

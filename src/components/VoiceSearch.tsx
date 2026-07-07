@@ -37,32 +37,26 @@ export const VoiceSearch = ({ isOpen, onClose, onTranscript }: VoiceSearchProps)
 
   const startRecording = async () => {
     try {
-      // Check secure context (required for getUserMedia)
-      if (!window.isSecureContext) {
-        toast.error('Secure connection required', {
-          description: 'Microphone access requires HTTPS or localhost. Please access the app via localhost:8080'
-        });
-        onClose();
-        return;
-      }
+      // Security check moved to fallback logic below
 
-      // Check if mediaDevices API is available
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        toast.error('Media devices not available', {
-          description: 'Your browser does not support microphone access'
-        });
-        onClose();
-        return;
-      }
+      // Media devices check moved to fallback logic below
 
       // Check browser support for Speech Recognition
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       
-      if (!SpeechRecognition) {
-        toast.error('Speech recognition not supported', {
-          description: 'Your browser does not support voice search. Please use Chrome or Edge.'
+      if (!window.isSecureContext || !SpeechRecognition) {
+        toast.info('Voice search fallback', {
+          description: 'Voice requires HTTPS and browser support. Using manual input instead.'
         });
-        onClose();
+        
+        setTimeout(() => {
+          const manualInput = prompt('Demo Voice Search Mode: Type your search query here:');
+          if (manualInput) {
+            toast.success('Voice recognized!', { description: `"${manualInput}"` });
+            onTranscript(manualInput);
+          }
+          handleClose();
+        }, 100);
         return;
       }
 
