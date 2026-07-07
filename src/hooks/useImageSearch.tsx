@@ -47,7 +47,7 @@ export const useImageSearch = () => {
       const randomGuess = mockGuesses[Math.floor(Math.random() * mockGuesses.length)];
       
       try {
-        const { data: fallbackShops } = await supabase.from('shops').select('id, name, description, address, image_url, rating, category').limit(3);
+        const { data: fallbackShops } = await supabase.from('shops').select('id, name, description, address, image_url, rating, category').eq('verified', true).limit(3);
         
         toast.success(`Demo AI guess: ${randomGuess}`, {
           description: `Found ${fallbackShops?.length || 0} shops matching this image (Demo Mode)`,

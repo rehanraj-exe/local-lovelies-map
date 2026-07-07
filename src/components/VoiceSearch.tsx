@@ -110,7 +110,7 @@ export const VoiceSearch = ({ isOpen, onClose, onTranscript }: VoiceSearchProps)
 
       // Initialize speech recognition
       const recognition = new SpeechRecognition();
-      recognition.continuous = true;
+      recognition.continuous = false;
       recognition.interimResults = true;
       recognition.lang = 'en-US';
 
