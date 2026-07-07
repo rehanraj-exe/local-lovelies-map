@@ -16,6 +16,7 @@ import { Search, User, Grid, Map, Briefcase, Store, LogOut, Clock, Filter, Packa
 import heroImage from '@/assets/hero-town.jpg';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { LanguageSelector } from '@/components/LanguageSelector';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useVoiceRecording } from '@/hooks/useVoiceRecording';
 import { useImageSearch } from '@/hooks/useImageSearch';
@@ -295,7 +296,8 @@ const Index = () => {
             </Button>
 
             {/* Actions */}
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
+              <LanguageSelector />
               <Cart />
               
               <Button

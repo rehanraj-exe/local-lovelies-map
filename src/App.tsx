@@ -30,7 +30,6 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <LanguageSelector />
       <BrowserRouter>
         <AuthProvider>
           <div className="pb-16 md:pb-0"> {/* Padding for mobile bottom nav */}

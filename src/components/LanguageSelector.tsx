@@ -39,7 +39,7 @@ export const LanguageSelector = () => {
   }, []);
 
   return (
-    <div className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-[60] bg-white/90 backdrop-blur-sm p-2 rounded-xl shadow-glow border border-purple-100 animate-fade-in hover:scale-105 transition-all">
+    <div className="relative inline-flex items-center z-50">
       <div id="google_translate_element" className="translate-widget"></div>
       <style>{`
         /* Hide the annoying top banner that Google Translate sometimes adds */
@@ -51,17 +51,25 @@ export const LanguageSelector = () => {
         }
         /* Style the select dropdown */
         .goog-te-combo {
-          padding: 8px;
-          border-radius: 8px;
+          padding: 8px 12px;
+          border-radius: 9999px; /* full rounded like buttons */
           border: 1px solid #e2e8f0;
+          background-color: white;
           outline: none;
           font-family: inherit;
+          font-size: 14px;
           color: #475569;
           cursor: pointer;
           font-weight: 500;
+          transition: all 0.2s;
+        }
+        .goog-te-combo:hover {
+          border-color: #cbd5e1;
+          box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
         }
         .goog-te-combo:focus {
           border-color: #8b5cf6;
+          ring: 2px;
         }
         /* Hide the Google logo */
         .goog-logo-link {

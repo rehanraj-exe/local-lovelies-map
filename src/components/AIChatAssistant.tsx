@@ -114,18 +114,43 @@ export const AIChatAssistant = () => {
         return;
       }
 
-      // Demo fallback if edge function fails (e.g. no API key)
+      // Smart Fallback if edge function fails
       const lowerInput = messageText.toLowerCase();
       let mockResponse = "I'm your local AI assistant! 🌟 I can help you find shops, deals, and jobs in your area. Use the search bar above or browse our categories to get started!";
       
-      if (lowerInput.includes('baker') || lowerInput.includes('cake') || lowerInput.includes('food')) {
-         mockResponse = "Looking for something tasty? 🍰 There are several great spots nearby. Try filtering the 'Food & Dining' category on the home page!";
-      } else if (lowerInput.includes('job') || lowerInput.includes('work') || lowerInput.includes('hire')) {
-         mockResponse = "We have a dedicated Job Board! 💼 You can find it in the navigation menu to see local businesses hiring right now.";
-      } else if (lowerInput.includes('discount') || lowerInput.includes('deal') || lowerInput.includes('offer')) {
-         mockResponse = "Everyone loves a good deal! 🎁 Check out the 'Active Deals' filter on the map or home page to see who's running promotions.";
-      } else if (lowerInput.includes('salon') || lowerInput.includes('hair') || lowerInput.includes('cut')) {
-         mockResponse = "Time for a fresh look! ✂️ Check the 'Services' category for top-rated salons and barbers in your neighborhood.";
+      try {
+        if (lowerInput.includes('baker') || lowerInput.includes('cake') || lowerInput.includes('food') || lowerInput.includes('coffee') || lowerInput.includes('eat')) {
+          const { data } = await supabase.from('shops').select('name').in('category', ['Food & Dining', 'Cafes', 'Groceries']).limit(3);
+          if (data && data.length > 0) {
+            mockResponse = `Looking for something tasty? 🍰 I found these great spots nearby: **${data.map(s => s.name).join(', ')}**. Check them out on the home page!`;
+          } else {
+            mockResponse = "Looking for something tasty? 🍰 Try filtering the 'Food & Dining' category on the home page!";
+          }
+        } else if (lowerInput.includes('job') || lowerInput.includes('work') || lowerInput.includes('hire')) {
+          const { data } = await supabase.from('jobs').select('title').eq('active', true).limit(3);
+          if (data && data.length > 0) {
+            mockResponse = `We have some great local opportunities! 💼 Current openings include: **${data.map(j => j.title).join(', ')}**. Head to the Job Board to apply!`;
+          } else {
+            mockResponse = "We have a dedicated Job Board! 💼 You can find it in the navigation menu to see local businesses hiring right now.";
+          }
+        } else if (lowerInput.includes('discount') || lowerInput.includes('deal') || lowerInput.includes('offer')) {
+          mockResponse = "Everyone loves a good deal! 🎁 Check out the 'Active Deals' filter on the map or home page to see who's running promotions right now.";
+        } else if (lowerInput.includes('salon') || lowerInput.includes('hair') || lowerInput.includes('cut')) {
+          const { data } = await supabase.from('shops').select('name').eq('category', 'Services').limit(3);
+          if (data && data.length > 0) {
+            mockResponse = `Time for a fresh look! ✂️ Some highly-rated services nearby are: **${data.map(s => s.name).join(', ')}**.`;
+          } else {
+            mockResponse = "Time for a fresh look! ✂️ Check the 'Services' category for top-rated salons and barbers in your neighborhood.";
+          }
+        } else {
+          // General shop search fallback
+          const { data } = await supabase.from('shops').select('name').limit(3);
+          if (data && data.length > 0) {
+            mockResponse = `I can help with that! 🌟 Some of our most popular local spots right now are **${data.map(s => s.name).join(', ')}**. Try searching for specific items above!`;
+          }
+        }
+      } catch (dbError) {
+        console.error("Fallback DB query failed", dbError);
       }
 
       setMessages((prev) => [
