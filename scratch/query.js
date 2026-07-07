@@ -31,11 +31,10 @@ console.log("Using key prefix:", supabaseKey.substring(0, 15) + "...");
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const { data, error } = await supabase.from('shops').select('*').limit(5);
+const { data: shops, error: shopsError } = await supabase.from('shops').select('id, name, owner_id').limit(5);
+if (shopsError) console.error("Error fetching shops:", shopsError);
+else console.log("Shops:", shops);
 
-if (error) {
-  console.error("Error fetching shops:", error);
-} else {
-  console.log("Success! Fetched shops count:", data.length);
-  console.log("Shops data:", data);
-}
+const { data: jobs, error: jobsError } = await supabase.from('jobs').select('*');
+if (jobsError) console.error("Error fetching jobs:", jobsError);
+else console.log("Total jobs:", jobs.length);

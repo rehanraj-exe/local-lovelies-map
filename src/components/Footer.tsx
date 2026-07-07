@@ -19,16 +19,16 @@ const Footer = () => {
             <h3 className="text-white font-semibold text-lg mb-4">Team</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <span className="text-gray-400">Idea by:</span> Dheeraj
+                Rehan Raj <span className="text-gray-400">– Project Lead & Full-Stack Developer</span>
               </li>
               <li>
-                <span className="text-gray-400">Contributions:</span> Durga Prasad
+                Rahini Reddy <span className="text-gray-400">– UI/UX Designer & Product Research</span>
               </li>
               <li>
-                <span className="text-gray-400">Project Assistance:</span> Mokshith
+                Sai Santhosh <span className="text-gray-400">– Model Integration & Testing</span>
               </li>
               <li>
-                <span className="text-gray-400">Developed by:</span> Rehan Raj
+                Ram Sahith <span className="text-gray-400">– AI Engineer & Database Management</span>
               </li>
             </ul>
           </div>
