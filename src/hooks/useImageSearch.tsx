@@ -50,11 +50,15 @@ export const useImageSearch = () => {
         const { data: fallbackShops } = await supabase.from('shops').select('id, name, description, address, image_url, rating, category').limit(3);
         
         toast.success(`Demo AI guess: ${randomGuess}`, {
-          description: `Found 3 shops matching this image (Demo Mode)`,
+          description: `Found ${fallbackShops?.length || 0} shops matching this image (Demo Mode)`,
         });
         
         return { 
-          matches: fallbackShops?.map(s => ({ shop: s })) || [], 
+          matches: fallbackShops?.map(s => ({ 
+            id: s.id, 
+            score: 0.9 + (Math.random() * 0.1),
+            reason: `This looks like a great place for ${randomGuess} based on your image!`
+          })) || [], 
           analysis: { guess: randomGuess } 
         };
       } catch (dbError) {

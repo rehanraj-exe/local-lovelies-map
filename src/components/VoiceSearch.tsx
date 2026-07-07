@@ -15,6 +15,7 @@ export const VoiceSearch = ({ isOpen, onClose, onTranscript }: VoiceSearchProps)
   const [isProcessing, setIsProcessing] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioLevel, setAudioLevel] = useState(0);
+  const [interimTranscript, setInterimTranscript] = useState('');
   const recognitionRef = useRef<any>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -25,20 +26,22 @@ export const VoiceSearch = ({ isOpen, onClose, onTranscript }: VoiceSearchProps)
 
   useEffect(() => {
     if (isOpen && !isRecording) {
+      setInterimTranscript('');
       startRecording();
     }
 
     return () => {
       stopRecording();
       if (timerRef.current) clearInterval(timerRef.current);
-      if (audioContextRef.current) audioContextRef.current.close();
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close().catch(() => {});
+      }
     };
   }, [isOpen]);
 
   const startRecording = async () => {
     try {
       // Security check moved to fallback logic below
-
       // Media devices check moved to fallback logic below
 
       // Check browser support for Speech Recognition
@@ -107,8 +110,8 @@ export const VoiceSearch = ({ isOpen, onClose, onTranscript }: VoiceSearchProps)
 
       // Initialize speech recognition
       const recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
+      recognition.continuous = true;
+      recognition.interimResults = true;
       recognition.lang = 'en-US';
 
       recognitionRef.current = recognition;
@@ -116,6 +119,7 @@ export const VoiceSearch = ({ isOpen, onClose, onTranscript }: VoiceSearchProps)
       recognition.onstart = () => {
         setIsRecording(true);
         setRecordingTime(0);
+        setInterimTranscript('');
         
         // Start timer
         const interval = setInterval(() => {
@@ -129,16 +133,29 @@ export const VoiceSearch = ({ isOpen, onClose, onTranscript }: VoiceSearchProps)
       };
 
       recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        setIsProcessing(true);
+        let finalStr = '';
+        let interimStr = '';
         
-        setTimeout(() => {
-          toast.success('Voice recognized!', {
-            description: `"${transcript}"`
-          });
-          onTranscript(transcript);
-          handleClose();
-        }, 500);
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalStr += event.results[i][0].transcript;
+          } else {
+            interimStr += event.results[i][0].transcript;
+          }
+        }
+        
+        setInterimTranscript(interimStr || finalStr);
+        
+        if (finalStr) {
+          setIsProcessing(true);
+          setTimeout(() => {
+            toast.success('Voice recognized!', {
+              description: `"${finalStr}"`
+            });
+            onTranscript(finalStr);
+            handleClose();
+          }, 500);
+        }
       };
 
       recognition.onerror = (event: any) => {
@@ -272,27 +289,30 @@ export const VoiceSearch = ({ isOpen, onClose, onTranscript }: VoiceSearchProps)
             )}
           </div>
 
-          {/* Status */}
-          <div className="text-center space-y-2">
+          {/* Status & Live Transcript */}
+          <div className="text-center space-y-3 min-h-[100px] flex flex-col justify-center items-center">
             {isProcessing ? (
-              <p className="text-sm text-muted-foreground animate-pulse">
-                Processing...
+              <p className="text-lg text-muted-foreground animate-pulse font-medium">
+                Searching...
               </p>
             ) : isRecording ? (
               <>
-                <p className="text-lg font-medium">
-                  Listening...
-                </p>
-                <p className="text-2xl font-mono text-primary">
+                <p className="text-2xl font-mono text-primary/70">
                   {formatTime(recordingTime)}
                 </p>
-                <p className="text-sm text-muted-foreground">
-                  Speak clearly into your microphone
-                </p>
+                {interimTranscript ? (
+                  <p className="text-xl font-medium text-foreground bg-accent/30 p-4 rounded-xl shadow-inner max-w-full break-words border border-border/50">
+                    "{interimTranscript}"
+                  </p>
+                ) : (
+                  <p className="text-lg text-muted-foreground animate-pulse">
+                    Listening... Speak now
+                  </p>
+                )}
               </>
             ) : (
               <p className="text-sm text-muted-foreground">
-                Starting microphone...
+                Initializing microphone...
               </p>
             )}
           </div>
