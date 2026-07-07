@@ -16,6 +16,8 @@ export const VoiceSearch = ({ isOpen, onClose, onTranscript }: VoiceSearchProps)
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioLevel, setAudioLevel] = useState(0);
   const [interimTranscript, setInterimTranscript] = useState('');
+  const [isManualFallback, setIsManualFallback] = useState(false);
+  const [manualInputText, setManualInputText] = useState('');
   const transcriptRef = useRef('');
   const recognitionRef = useRef<any>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -24,9 +26,11 @@ export const VoiceSearch = ({ isOpen, onClose, onTranscript }: VoiceSearchProps)
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef<number | null>(null);
   const activeRef = useRef(false);
+  const isCancelledRef = useRef(false);
 
   useEffect(() => {
     if (isOpen && !isRecording) {
+      isCancelledRef.current = false;
       setInterimTranscript('');
       startRecording();
     }
@@ -49,15 +53,7 @@ export const VoiceSearch = ({ isOpen, onClose, onTranscript }: VoiceSearchProps)
         toast.info('Voice search fallback', {
           description: 'Voice requires HTTPS and browser support. Using manual input instead.'
         });
-        
-        setTimeout(() => {
-          const manualInput = prompt('Demo Voice Search Mode: Type your search query here:');
-          if (manualInput) {
-            toast.success('Voice recognized!', { description: `"${manualInput}"` });
-            onTranscript(manualInput);
-          }
-          handleClose();
-        }, 100);
+        setIsManualFallback(true);
         return;
       }
 
@@ -110,20 +106,10 @@ export const VoiceSearch = ({ isOpen, onClose, onTranscript }: VoiceSearchProps)
           }
         }
         
-        const currentText = interimStr || finalStr;
-        setInterimTranscript(currentText);
-        transcriptRef.current = currentText;
-        
-        if (finalStr) {
-          transcriptRef.current = ''; // clear immediately to prevent onend from double-submitting
-          setIsProcessing(true);
-          setTimeout(() => {
-            toast.success('Voice recognized!', {
-              description: `"${finalStr}"`
-            });
-            onTranscript(finalStr);
-            handleClose();
-          }, 500);
+        const currentText = (finalStr + ' ' + interimStr).trim();
+        if (currentText) {
+          setInterimTranscript(currentText);
+          transcriptRef.current = currentText;
         }
       };
 
@@ -145,26 +131,29 @@ export const VoiceSearch = ({ isOpen, onClose, onTranscript }: VoiceSearchProps)
             description: 'Please try again'
           });
         }
-        onClose();
+        // Prevent auto close on error
       };
 
       recognition.onend = () => {
         setIsRecording(false);
         if (timerRef.current) clearInterval(timerRef.current);
         
-        // If it ended naturally but didn't trigger handleClose via finalStr in onresult,
-        // we should process whatever we have or close it.
+        if (isCancelledRef.current) {
+          return; // Ignore if user cancelled
+        }
+
         const currentText = transcriptRef.current;
         if (currentText) {
           setIsProcessing(true);
           setTimeout(() => {
+            if (isCancelledRef.current) return;
             toast.success('Voice recognized!', { description: `"${currentText}"` });
             onTranscript(currentText);
             handleClose();
           }, 500);
         } else {
-          // No speech detected, just close
-          handleClose();
+          // No speech detected
+          toast.info('No speech detected', { description: 'Please tap Start Listening to try again.' });
         }
       };
 
@@ -195,27 +184,16 @@ export const VoiceSearch = ({ isOpen, onClose, onTranscript }: VoiceSearchProps)
     if (timerRef.current) {
       clearInterval(timerRef.current);
     }
-    
-    // Manual stop: process whatever transcript we captured so far
-    const currentText = transcriptRef.current;
-    if (currentText) {
-      setIsProcessing(true);
-      setTimeout(() => {
-        toast.success('Voice recognized!', {
-          description: `"${currentText}"`
-        });
-        onTranscript(currentText);
-        handleClose();
-      }, 500);
-    } else {
-      handleClose();
-    }
+    // Don't process manually here. recognition.stop() will trigger onend, which processes transcriptRef.current.
   };
 
   const handleClose = () => {
+    isCancelledRef.current = true;
     activeRef.current = false;
     setIsRecording(false);
     setIsProcessing(false);
+    setIsManualFallback(false);
+    setManualInputText('');
     setRecordingTime(0);
     setAudioLevel(0);
     setInterimTranscript('');
@@ -224,6 +202,15 @@ export const VoiceSearch = ({ isOpen, onClose, onTranscript }: VoiceSearchProps)
       try { recognitionRef.current.stop(); } catch {}
     }
     onClose();
+  };
+
+  const handleManualSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (manualInputText.trim()) {
+      toast.success('Search received!', { description: `"${manualInputText}"` });
+      onTranscript(manualInputText.trim());
+      handleClose();
+    }
   };
 
   const formatTime = (seconds: number) => {
@@ -294,57 +281,83 @@ export const VoiceSearch = ({ isOpen, onClose, onTranscript }: VoiceSearchProps)
           </div>
 
           {/* Status & Live Transcript */}
-          <div className="text-center space-y-3 min-h-[100px] flex flex-col justify-center items-center">
-            {isProcessing ? (
-              <p className="text-lg text-muted-foreground animate-pulse font-medium">
-                Searching...
+          {isManualFallback ? (
+            <form onSubmit={handleManualSubmit} className="flex flex-col gap-4 min-h-[150px] justify-center w-full">
+              <p className="text-sm text-center text-muted-foreground">
+                Microphone not supported. Type your search instead:
               </p>
-            ) : isRecording ? (
-              <>
-                <p className="text-2xl font-mono text-primary/70">
-                  {formatTime(recordingTime)}
-                </p>
-                {interimTranscript ? (
-                  <p className="text-xl font-medium text-foreground bg-accent/30 p-4 rounded-xl shadow-inner max-w-full break-words border border-border/50">
-                    "{interimTranscript}"
-                  </p>
-                ) : (
-                  <p className="text-lg text-muted-foreground animate-pulse">
-                    Listening... Speak now
-                  </p>
-                )}
-              </>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                Initializing microphone...
-              </p>
-            )}
-          </div>
-
-          {/* Controls */}
-          <div className="flex justify-center gap-3">
-            {isRecording && (
-              <Button
-                size="lg"
-                variant="destructive"
-                onClick={stopRecording}
-                className="rounded-full shadow-lg"
-              >
-                <StopCircle className="w-5 h-5 mr-2" />
-                Stop
+              <input
+                type="text"
+                value={manualInputText}
+                onChange={(e) => setManualInputText(e.target.value)}
+                placeholder="E.g., best coffee shop..."
+                className="w-full px-4 py-3 rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-primary/50"
+                autoFocus
+              />
+              <Button type="submit" size="lg" className="w-full rounded-full shadow-lg">
+                Search
               </Button>
-            )}
-            
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={handleClose}
-              className="rounded-full"
-            >
-              <X className="w-5 h-5 mr-2" />
-              Cancel
-            </Button>
-          </div>
+            </form>
+          ) : (
+            <>
+              <div className="text-center space-y-3 min-h-[100px] flex flex-col justify-center items-center">
+                {isProcessing ? (
+                  <p className="text-lg text-muted-foreground animate-pulse font-medium">
+                    Searching...
+                  </p>
+                ) : isRecording ? (
+                  <>
+                    <p className="text-2xl font-mono text-primary/70">
+                      {formatTime(recordingTime)}
+                    </p>
+                    {interimTranscript ? (
+                      <p className="text-xl font-medium text-foreground bg-accent/30 p-4 rounded-xl shadow-inner max-w-full break-words border border-border/50">
+                        "{interimTranscript}"
+                      </p>
+                    ) : (
+                      <p className="text-lg text-muted-foreground animate-pulse">
+                        Listening... Speak now
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center gap-2">
+                    <p className="text-sm text-muted-foreground">
+                      Voice search is ready
+                    </p>
+                    <Button variant="outline" size="sm" onClick={startRecording} className="mt-2 rounded-full">
+                      <Mic className="w-4 h-4 mr-2" /> Start Listening
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {/* Controls */}
+              <div className="flex justify-center gap-3">
+                {isRecording && (
+                  <Button
+                    size="lg"
+                    variant="destructive"
+                    onClick={stopRecording}
+                    className="rounded-full shadow-lg"
+                  >
+                    <StopCircle className="w-5 h-5 mr-2" />
+                    Stop
+                  </Button>
+                )}
+                
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={handleClose}
+                  className="rounded-full"
+                >
+                  <X className="w-5 h-5 mr-2" />
+                  Cancel
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </DialogContent>
     </Dialog>

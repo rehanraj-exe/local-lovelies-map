@@ -115,6 +115,7 @@ const Index = () => {
 
   const handleVoiceTranscript = (text: string) => {
     setSearchQuery(text);
+    setIsSmartMode(false);
   };
 
   const handleImageSearch = async (imageData: string) => {
@@ -174,12 +175,12 @@ const Index = () => {
 
     // Apply search query
     if (searchQuery.trim()) {
-      if (isSmartMode && Object.keys(aiMatches).length > 0) {
+      if (isSmartMode) {
         // Filter and sort by AI match score
         results = results
           .filter(shop => shop.id in aiMatches)
           .sort((a, b) => (aiMatches[b.id]?.score || 0) - (aiMatches[a.id]?.score || 0));
-      } else if (!isSmartMode) {
+      } else {
         // Fallback to standard fuzzy search
         const fuseResults = fuse.search(searchQuery);
         results = fuseResults.map(result => result.item);
@@ -485,9 +486,14 @@ const Index = () => {
 
       {/* Main Content */}
       <div ref={resultsRef} className="container mx-auto px-4 pb-8">
-        {isLoading ? (
+        {isLoading || isAISearching || isImageProcessing ? (
           <div className="flex items-center justify-center h-96">
-            <div className="text-muted-foreground">Loading shops...</div>
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <div className="text-muted-foreground font-medium animate-pulse">
+                {isImageProcessing ? 'Analyzing image...' : isAISearching ? 'AI is searching...' : 'Loading shops...'}
+              </div>
+            </div>
           </div>
         ) : searchQuery.trim() ? (
           /* Search Results View */
