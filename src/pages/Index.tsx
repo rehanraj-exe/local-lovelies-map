@@ -488,11 +488,15 @@ const Index = () => {
           <SearchResults shops={filteredShops} searchQuery={searchQuery} />
         ) : (
           <div className="space-y-8">
-            {/* Discount Carousel */}
-            <DiscountCarousel />
+            {selectedCategory === 'All' && (
+              <>
+                {/* Discount Carousel */}
+                <DiscountCarousel />
 
-            {/* Top Local Picks */}
-            <TopLocalPicks category={selectedCategory} searchQuery={searchQuery} />
+                {/* Top Local Picks */}
+                <TopLocalPicks category={selectedCategory} searchQuery={searchQuery} />
+              </>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredShops.map((shop, index) => (
