@@ -98,19 +98,38 @@ serve(async (req) => {
 Available Data Context:
 ${JSON.stringify(contextData, null, 2)}`;
 
+    const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
-    if (!lovableApiKey) {
-      throw new Error('LOVABLE_API_KEY not configured');
+    const openAiApiKey = Deno.env.get('OPENAI_API_KEY');
+
+    let apiKey = '';
+    let apiUrl = '';
+    let apiModel = 'google/gemini-2.5-flash';
+
+    if (geminiApiKey) {
+      apiKey = geminiApiKey;
+      apiUrl = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
+      apiModel = 'gemini-2.5-flash';
+    } else if (openAiApiKey) {
+      apiKey = openAiApiKey;
+      apiUrl = 'https://api.openai.com/v1/chat/completions';
+      apiModel = 'gpt-4o-mini';
+    } else if (lovableApiKey) {
+      apiKey = lovableApiKey;
+      apiUrl = 'https://ai.gateway.lovable.dev/v1/chat/completions';
+      apiModel = 'google/gemini-2.5-flash';
+    } else {
+      throw new Error('No API key configured (GEMINI_API_KEY, OPENAI_API_KEY, or LOVABLE_API_KEY)');
     }
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${lovableApiKey}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: apiModel,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: message },

@@ -13,10 +13,10 @@ serve(async (req) => {
   }
 
   try {
-    const { image } = await req.json();
+    const { query } = await req.json();
     
-    if (!image) {
-      throw new Error('No image provided');
+    if (!query || query.trim() === '') {
+      throw new Error('No search query provided');
     }
 
     const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
@@ -49,14 +49,30 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Fetch shops data
-    const { data: shops } = await supabase
+    const { data: shops, error: shopsError } = await supabase
       .from('shops')
-      .select('id, name, category, subcategory, description, tags')
+      .select('id, name, category, subcategory, description, tags, address')
       .eq('verified', true);
 
-    console.log('Analyzing image for product search...');
+    if (shopsError) throw shopsError;
 
-    // Use Lovable AI or configured provider to analyze the image and match shops
+    console.log(`Analyzing search query "${query}" against ${shops.length} shops...`);
+
+    const systemPrompt = `You are a local shop search semantic matching assistant.
+Your job is to match the user's search query against a database of local shops.
+The match should be semantic and understand context (e.g. searching 'clothing' matches boutique, 'hungry' or 'dinner' matches restaurants, 'hand-made' or 'gift' matches craft shop, 'fresh vegetables' matches grocers).
+
+Given the user search query, analyze the provided list of shops and return a JSON object with:
+- matches: an array of matched shops, where each item has:
+  - id: the UUID of the shop
+  - score: a float score from 0.0 to 1.0 (relevance of the match)
+  - reason: a short 1-sentence explanation of why this shop is relevant to the query (e.g., "Authentic Indian cuisine ideal for dining out").
+
+Rules:
+1. Only return shops that score 0.4 or higher.
+2. Sort the array of matches by score in descending order.
+3. Return ONLY strict JSON in the specified format without markdown blocks.`;
+
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
@@ -66,40 +82,8 @@ serve(async (req) => {
       body: JSON.stringify({
         model: apiModel,
         messages: [
-          {
-            role: 'system',
-            content: `You are a product recognition and semantic matching AI.
-Your job is to analyze the image, identify the product, and then match it against a database of local shops.
-The match should be semantic (e.g., a phone matches an electronics shop, vegetables match a grocer).
-
-Return STRICT JSON with:
-- analysis: an object containing:
-  - guess: a short 2-4 word plain-language guess of what the item is
-  - description: a short sentence describing the item
-- matches: an array of matched shops, where each item has:
-  - id: the UUID of the shop
-  - score: a float score from 0.0 to 1.0 (relevance of the match)
-  - reason: a short 1-sentence explanation of why this shop is relevant to the image.
-
-Rules:
-1. Only return shops that score 0.4 or higher.
-2. Sort the array of matches by score in descending order.`
-          },
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: `What product is in this image? Match it against these shops:\n\n${JSON.stringify(shops, null, 2)}`
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: image
-                }
-              }
-            ]
-          }
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `Search Query: "${query}"\n\nShops:\n${JSON.stringify(shops, null, 2)}` }
         ],
         response_format: { type: "json_object" }
       }),
@@ -112,25 +96,19 @@ Rules:
     }
 
     const aiResult = await response.json();
-    const result = JSON.parse(aiResult.choices[0].message.content);
+    const analysis = JSON.parse(aiResult.choices[0].message.content);
     
-    console.log('Image analysis and matches:', result);
-
-    const matches = result.matches || [];
+    console.log('Smart search analysis:', analysis);
 
     return new Response(
-      JSON.stringify({
-        analysis: result.analysis,
-        matches: matches,
-        matchCount: matches.length
-      }),
+      JSON.stringify(analysis),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('Error in image-search:', error);
+    console.error('Error in smart-search:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error', matches: [] }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

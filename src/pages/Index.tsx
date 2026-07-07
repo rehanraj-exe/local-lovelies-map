@@ -19,6 +19,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useVoiceRecording } from '@/hooks/useVoiceRecording';
 import { useImageSearch } from '@/hooks/useImageSearch';
+import { useSmartSearch } from '@/hooks/useSmartSearch';
+import { toast } from 'sonner';
 import { CameraSearch } from '@/components/CameraSearch';
 import { VoiceSearch } from '@/components/VoiceSearch';
 
@@ -45,7 +47,6 @@ const Index = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const [selectedShopId, setSelectedShopId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [shops, setShops] = useState<Shop[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -54,19 +55,67 @@ const Index = () => {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isVoiceOpen, setIsVoiceOpen] = useState(false);
   
-  // Image search hook
   const { isProcessing: isImageProcessing, searchByImage } = useImageSearch();
+
+  // Smart Search hook
+  const { 
+    isSearching: isAISearching, 
+    aiMatches, 
+    setAiMatches,
+    isSmartMode, 
+    setIsSmartMode, 
+    performSmartSearch, 
+    clearSmartSearch 
+  } = useSmartSearch();
+
+  // Automatically reset smart search when search query is cleared
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      clearSmartSearch();
+    }
+  }, [searchQuery]);
+
+  const handleSearchSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (searchQuery.trim()) {
+      if (!isSmartMode) {
+        setIsSmartMode(true);
+      }
+      await performSmartSearch(searchQuery);
+    }
+  };
+
+  const toggleSmartSearch = async () => {
+    if (isSmartMode) {
+      clearSmartSearch();
+    } else {
+      setIsSmartMode(true);
+      if (searchQuery.trim()) {
+        await performSmartSearch(searchQuery);
+      } else {
+        toast.info('Enter a search query', {
+          description: 'Type what you are looking for (e.g. "something spicy to eat") and hit the AI search button!'
+        });
+      }
+    }
+  };
 
   const handleVoiceTranscript = (text: string) => {
     setSearchQuery(text);
-    setViewMode('list');
   };
 
   const handleImageSearch = async (imageData: string) => {
     const results = await searchByImage(imageData);
     if (results.matches && results.matches.length > 0) {
-      setSearchQuery(results.analysis?.productName || 'Image search results');
-      setViewMode('list');
+      setSearchQuery(results.analysis?.guess || 'Image search results');
+      
+      // Update smart search state with the matches from the image LLM call
+      setIsSmartMode(true);
+      const matchesDict: Record<string, { score: number; reason: string }> = {};
+      results.matches.forEach((m: any) => {
+        matchesDict[m.id] = { score: m.score, reason: m.reason };
+      });
+      setAiMatches(matchesDict);
     }
   };
 
@@ -106,14 +155,22 @@ const Index = () => {
     });
   }, [shops]);
 
-  // Filter shops based on category, search, and open status with fuzzy matching
+  // Filter shops based on category, search, and open status with fuzzy matching or AI smart search
   const filteredShops = useMemo(() => {
     let results = shops;
 
-    // Apply fuzzy search if there's a search query
+    // Apply search query
     if (searchQuery.trim()) {
-      const fuseResults = fuse.search(searchQuery);
-      results = fuseResults.map(result => result.item);
+      if (isSmartMode && Object.keys(aiMatches).length > 0) {
+        // Filter and sort by AI match score
+        results = results
+          .filter(shop => shop.id in aiMatches)
+          .sort((a, b) => (aiMatches[b.id]?.score || 0) - (aiMatches[a.id]?.score || 0));
+      } else if (!isSmartMode) {
+        // Fallback to standard fuzzy search
+        const fuseResults = fuse.search(searchQuery);
+        results = fuseResults.map(result => result.item);
+      }
     }
 
     // Apply other filters
@@ -131,7 +188,7 @@ const Index = () => {
       
       return matchesCategory && matchesMapFilter;
     });
-  }, [shops, fuse, selectedCategory, searchQuery, mapFilter]);
+  }, [shops, fuse, selectedCategory, searchQuery, mapFilter, isSmartMode, aiMatches]);
 
   // Count active offers (you can fetch this from offers table later)
   const activeOffers = 0; // Placeholder for now
@@ -162,19 +219,39 @@ const Index = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col md:flex-row gap-4 items-center">
             {/* Search with voice */}
-            <div className="relative flex-1 w-full flex items-center gap-2">
+            <form onSubmit={handleSearchSubmit} className="relative flex-1 w-full flex items-center gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
-                  placeholder="Search shops, categories, or areas..."
-                  className="pl-10 pr-4 rounded-full border-border"
+                  placeholder={isSmartMode ? "Describe what you want (e.g. delicious warm coffee)..." : "Search shops, categories, or areas..."}
+                  className={`pl-10 pr-4 rounded-full border-border transition-all ${isSmartMode ? 'ring-2 ring-purple-500/50 border-purple-500' : ''}`}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
               <Button
+                variant={isSmartMode ? "default" : "outline"}
+                size="icon"
+                type="button"
+                onClick={toggleSmartSearch}
+                className={`rounded-full transition-all ${
+                  isSmartMode 
+                    ? 'bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 hover:from-purple-700 hover:to-pink-700 text-white border-transparent shadow-glow animate-pulse-soft' 
+                    : ''
+                }`}
+                title={isSmartMode ? "Smart AI Search Active (Click to disable)" : "Enable Smart AI Search"}
+                disabled={isAISearching}
+              >
+                {isAISearching ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Sparkles className="w-5 h-5" />
+                )}
+              </Button>
+              <Button
                 variant="outline"
                 size="icon"
+                type="button"
                 onClick={() => setIsCameraOpen(true)}
                 disabled={isImageProcessing}
                 className={`rounded-full transition-all ${isImageProcessing ? 'opacity-50' : ''}`}
@@ -185,35 +262,25 @@ const Index = () => {
               <Button
                 variant="outline"
                 size="icon"
+                type="button"
                 onClick={() => setIsVoiceOpen(true)}
                 className="rounded-full transition-all"
                 title="Voice search"
               >
                 <Mic className="w-5 h-5" />
               </Button>
-            </div>
+            </form>
 
-            {/* View Toggle */}
-            <div className="flex gap-2">
-              <Button
-                variant={viewMode === 'map' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('map')}
-                className="rounded-full"
-              >
-                <Map className="w-4 h-4 mr-2" />
-                Map
-              </Button>
-              <Button
-                variant={viewMode === 'list' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('list')}
-                className="rounded-full"
-              >
-                <Grid className="w-4 h-4 mr-2" />
-                List
-              </Button>
-            </div>
+            {/* Map Link */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/map')}
+              className="rounded-full bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 text-blue-700 hover:bg-blue-100 transition-all"
+            >
+              <Map className="w-4 h-4 mr-2" />
+              View on Map
+            </Button>
 
             {/* Actions */}
             <div className="flex gap-2">
@@ -382,23 +449,21 @@ const Index = () => {
         </div>
       )}
 
-      {/* Category Filter Chips - Only show in List view */}
-      {viewMode === 'list' && (
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {categories.map((category) => (
-              <Badge
-                key={category}
-                variant={selectedCategory === category ? 'default' : 'outline'}
-                className="cursor-pointer whitespace-nowrap px-4 py-2 rounded-full hover:shadow-soft transition-all"
-                onClick={() => setSelectedCategory(category)}
-              >
-                {category}
-              </Badge>
-            ))}
-          </div>
+      {/* Category Filter Chips */}
+      <div className="container mx-auto px-4 py-4">
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          {categories.map((category) => (
+            <Badge
+              key={category}
+              variant={selectedCategory === category ? 'default' : 'outline'}
+              className="cursor-pointer whitespace-nowrap px-4 py-2 rounded-full hover:shadow-soft transition-all"
+              onClick={() => setSelectedCategory(category)}
+            >
+              {category}
+            </Badge>
+          ))}
         </div>
-      )}
+      </div>
 
       {/* Main Content */}
       <div className="container mx-auto px-4 pb-8">
@@ -409,68 +474,15 @@ const Index = () => {
         ) : searchQuery.trim() ? (
           /* Search Results View */
           <SearchResults shops={filteredShops} searchQuery={searchQuery} />
-        ) : viewMode === 'map' ? (
-          <div className="space-y-6">
+        ) : (
+          <div className="space-y-8">
             {/* Discount Carousel */}
             <DiscountCarousel />
 
             {/* Top Local Picks */}
             <TopLocalPicks />
 
-            {/* Map Filter Buttons */}
-            <div className="flex gap-2 flex-wrap">
-              <Button
-                variant={mapFilter === 'all' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setMapFilter('all')}
-                className="rounded-full"
-              >
-                All Shops
-              </Button>
-              <Button
-                variant={mapFilter === 'deals' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setMapFilter('deals')}
-                className="rounded-full"
-              >
-                🔥 Active Deals
-              </Button>
-              <Button
-                variant={mapFilter === 'new' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setMapFilter('new')}
-                className="rounded-full"
-              >
-                ✨ New Shops
-              </Button>
-              <Button
-                variant={mapFilter === 'open' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setMapFilter('open')}
-                className="rounded-full"
-              >
-                Open Now
-              </Button>
-              <Button
-                variant={mapFilter === 'closed' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setMapFilter('closed')}
-                className="rounded-full"
-              >
-                Currently Closed
-              </Button>
-            </div>
-
-            {/* Map View */}
-            <div className="relative h-[600px] mb-24 rounded-2xl shadow-medium border border-border z-0">
-              <MapView 
-                shops={filteredShops} 
-                onShopClick={(shopId) => navigate(`/shop/${shopId}`)}
-              />
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredShops.map((shop, index) => (
               <div
                 key={shop.id}
@@ -517,9 +529,16 @@ const Index = () => {
                     <Clock className="w-3.5 h-3.5" />
                     <span>{shop.hours?.monday?.open || '9:00 AM'} - {shop.hours?.monday?.close || '9:00 PM'}</span>
                   </div>
+                  {isSmartMode && aiMatches[shop.id] && (
+                    <div className="mt-2.5 px-3 py-2 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-700 dark:text-purple-300 flex items-start gap-1.5 animate-fade-in">
+                      <Sparkles className="w-3.5 h-3.5 mt-0.5 text-purple-500 flex-shrink-0" />
+                      <span>{aiMatches[shop.id].reason}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
+            </div>
           </div>
         )}
       </div>

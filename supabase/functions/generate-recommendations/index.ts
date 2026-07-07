@@ -87,17 +87,40 @@ serve(async (req) => {
       .slice(0, 5);
 
     // Generate AI insights
+    const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    const openAiApiKey = Deno.env.get('OPENAI_API_KEY');
+
+    let apiKey = '';
+    let apiUrl = '';
+    let apiModel = 'google/gemini-2.5-flash';
+
+    if (geminiApiKey) {
+      apiKey = geminiApiKey;
+      apiUrl = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
+      apiModel = 'gemini-2.5-flash';
+    } else if (openAiApiKey) {
+      apiKey = openAiApiKey;
+      apiUrl = 'https://api.openai.com/v1/chat/completions';
+      apiModel = 'gpt-4o-mini';
+    } else if (LOVABLE_API_KEY) {
+      apiKey = LOVABLE_API_KEY;
+      apiUrl = 'https://ai.gateway.lovable.dev/v1/chat/completions';
+      apiModel = 'google/gemini-2.5-flash';
+    } else {
+      throw new Error('No API key configured (GEMINI_API_KEY, OPENAI_API_KEY, or LOVABLE_API_KEY)');
+    }
+
     const prompt = `Based on these ${recommendations.length} top-rated local shops with ratings between ${Math.min(...recommendations.map((s: any) => s.rating))} and ${Math.max(...recommendations.map((s: any) => s.rating))}, provide a brief, friendly insight (max 50 words) about why these are great local picks. Focus on variety, quality, and community value.`;
 
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const aiResponse = await fetch(apiUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: apiModel,
         messages: [
           { role: 'system', content: 'You are a helpful local community assistant. Be warm, concise, and enthusiastic about supporting local businesses.' },
           { role: 'user', content: prompt }
