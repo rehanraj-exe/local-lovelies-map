@@ -288,7 +288,7 @@ const Index = () => {
               variant="outline"
               size="sm"
               onClick={() => navigate('/map')}
-              className="rounded-full bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 text-blue-700 hover:bg-blue-100 transition-all"
+              className="hidden md:flex rounded-full bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 text-blue-700 hover:bg-blue-100 transition-all"
             >
               <Map className="w-4 h-4 mr-2" />
               View on Map
@@ -305,7 +305,7 @@ const Index = () => {
                 className="rounded-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg animate-pulse-soft"
               >
                 <Crown className="w-4 h-4 mr-2" />
-                Go Premium
+                <span className="hidden sm:inline">Go Premium</span>
               </Button>
 
               {user && (
@@ -313,7 +313,7 @@ const Index = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => navigate('/wallet')}
-                  className="rounded-full"
+                  className="hidden md:flex rounded-full"
                 >
                   <Wallet className="w-4 h-4 mr-2" />
                   Wallet
@@ -324,7 +324,7 @@ const Index = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => navigate('/jobs')}
-                className="rounded-full"
+                className="hidden md:flex rounded-full"
               >
                 <Briefcase className="w-4 h-4 mr-2" />
                 Jobs
@@ -333,7 +333,7 @@ const Index = () => {
               {user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon" className="rounded-full">
+                    <Button variant="outline" size="icon" className="hidden md:flex rounded-full">
                       <User className="w-5 h-5" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -370,11 +370,12 @@ const Index = () => {
                 </DropdownMenu>
               ) : (
                 <Button
-                  variant="default"
+                  variant="outline"
                   size="sm"
                   onClick={() => navigate('/auth')}
-                  className="rounded-full"
+                  className="hidden md:flex rounded-full"
                 >
+                  <User className="w-4 h-4 mr-2" />
                   Sign In
                 </Button>
               )}

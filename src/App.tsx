@@ -20,6 +20,9 @@ import Premium from "./pages/Premium";
 import DeliveryAddresses from "./pages/DeliveryAddresses";
 import MapPage from "./pages/MapPage";
 
+import { LanguageSelector } from "@/components/LanguageSelector";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -27,9 +30,11 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <LanguageSelector />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
+          <div className="pb-16 md:pb-0"> {/* Padding for mobile bottom nav */}
+            <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/shop/:id" element={<ShopProfile />} />
@@ -47,6 +52,8 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <MobileBottomNav />
+          </div>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
