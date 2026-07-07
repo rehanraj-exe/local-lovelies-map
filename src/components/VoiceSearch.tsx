@@ -41,9 +41,6 @@ export const VoiceSearch = ({ isOpen, onClose, onTranscript }: VoiceSearchProps)
 
   const startRecording = async () => {
     try {
-      // Security check moved to fallback logic below
-      // Media devices check moved to fallback logic below
-
       // Check browser support for Speech Recognition
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       
@@ -63,50 +60,18 @@ export const VoiceSearch = ({ isOpen, onClose, onTranscript }: VoiceSearchProps)
         return;
       }
 
-      // Request microphone permission first
-      let stream: MediaStream;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      } catch (permError: any) {
-        console.error('Microphone permission error:', permError);
-        if (permError.name === 'NotAllowedError' || permError.name === 'PermissionDeniedError') {
-          toast.error('Microphone access denied', {
-            description: 'Please allow microphone access in your browser settings and try again'
-          });
-        } else if (permError.name === 'NotFoundError') {
-          toast.error('No microphone found', {
-            description: 'Please connect a microphone and try again'
-          });
-        } else {
-          toast.error('Microphone error', {
-            description: `Could not access microphone: ${permError.message}`
-          });
-        }
-        onClose();
-        return;
-      }
-
-      // Initialize audio visualization
-      streamRef.current = stream;
-      const audioContext = new AudioContext();
-      audioContextRef.current = audioContext;
-      const source = audioContext.createMediaStreamSource(stream);
-      const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 256;
-      source.connect(analyser);
-      analyserRef.current = analyser;
-
-      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      // Simulate audio visualization instead of locking the mic with getUserMedia
+      // This prevents the "audio-capture" failure on mobile devices where SpeechRecognition
+      // conflicts with getUserMedia for exclusive microphone access.
       activeRef.current = true;
-
-      const updateLevel = () => {
+      const simulateLevel = () => {
         if (!activeRef.current) return;
-        analyser.getByteFrequencyData(dataArray);
-        const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
-        setAudioLevel(average);
-        rafRef.current = requestAnimationFrame(updateLevel);
+        setAudioLevel(Math.random() * 50 + 10);
+        rafRef.current = requestAnimationFrame(() => {
+          setTimeout(simulateLevel, 100);
+        });
       };
-      updateLevel();
+      simulateLevel();
 
       // Initialize speech recognition
       const recognition = new SpeechRecognition();
