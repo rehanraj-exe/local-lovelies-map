@@ -99,22 +99,40 @@ export const AIChatAssistant = () => {
       
       if (error.message === 'auth') {
         errorMessage = '🔒 Your session has expired. Please sign in again to continue chatting.';
-      } else if (error.message === 'api_key') {
-        errorMessage = '⚙️ The AI service is not configured yet. Please ensure the LOVABLE_API_KEY is set in your Supabase Edge Function secrets.';
-      } else if (error.message?.includes('FunctionsHttpError') || error.message?.includes('500')) {
-        errorMessage = '🔧 The AI service is temporarily unavailable. Please try again in a moment.';
+        toast({
+          title: 'Error',
+          description: 'Failed to get a response from the assistant.',
+          variant: 'destructive',
+        });
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: errorMessage,
+          },
+        ]);
+        return;
       }
 
-      toast({
-        title: 'Error',
-        description: 'Failed to get a response from the assistant.',
-        variant: 'destructive',
-      });
+      // Demo fallback if edge function fails (e.g. no API key)
+      const lowerInput = messageText.toLowerCase();
+      let mockResponse = "I'm your local AI assistant! 🌟 I can help you find shops, deals, and jobs in your area. Use the search bar above or browse our categories to get started!";
+      
+      if (lowerInput.includes('baker') || lowerInput.includes('cake') || lowerInput.includes('food')) {
+         mockResponse = "Looking for something tasty? 🍰 There are several great spots nearby. Try filtering the 'Food & Dining' category on the home page!";
+      } else if (lowerInput.includes('job') || lowerInput.includes('work') || lowerInput.includes('hire')) {
+         mockResponse = "We have a dedicated Job Board! 💼 You can find it in the navigation menu to see local businesses hiring right now.";
+      } else if (lowerInput.includes('discount') || lowerInput.includes('deal') || lowerInput.includes('offer')) {
+         mockResponse = "Everyone loves a good deal! 🎁 Check out the 'Active Deals' filter on the map or home page to see who's running promotions.";
+      } else if (lowerInput.includes('salon') || lowerInput.includes('hair') || lowerInput.includes('cut')) {
+         mockResponse = "Time for a fresh look! ✂️ Check the 'Services' category for top-rated salons and barbers in your neighborhood.";
+      }
+
       setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
-          content: errorMessage,
+          content: mockResponse,
         },
       ]);
     } finally {

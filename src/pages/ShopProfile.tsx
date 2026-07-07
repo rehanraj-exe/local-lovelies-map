@@ -218,20 +218,17 @@ const ShopProfile = () => {
     }
   };
 
-  const openDirections = () => {
+  const openDirections = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (shop) {
       // Track click for analytics
       supabase.rpc('track_shop_click', { shop_uuid: shop.id });
       
       const url = `https://www.google.com/maps/dir/?api=1&destination=${shop.latitude},${shop.longitude}`;
-      // Use noopener,noreferrer to avoid iframe embedding issues
-      const newWindow = window.open(url, '_blank', 'noopener,noreferrer');
-      
-      // Fallback: if window.open was blocked by popup blocker or iframe
-      if (!newWindow) {
-        // Navigate the current tab instead
-        window.location.href = url;
-      }
+      window.open(url, '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -506,8 +503,8 @@ const ShopProfile = () => {
               )}
 
               {/* Products Section */}
-              {products.length > 0 && (
-                <div className="mt-8">
+              {products.length > 0 ? (
+                <div className="mt-8 pt-8 border-t border-border">
                   <h3 className="text-xl font-bold mb-4">Popular Products</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {products.map((product, index) => (
@@ -604,6 +601,11 @@ const ShopProfile = () => {
                       </Card>
                     ))}
                   </div>
+                </div>
+              ) : (
+                <div className="mt-8 pt-8 border-t border-border text-center py-12">
+                  <h3 className="text-xl font-bold mb-4">Products</h3>
+                  <p className="text-muted-foreground">No products available at the moment</p>
                 </div>
               )}
             </TabsContent>

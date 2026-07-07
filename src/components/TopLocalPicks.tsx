@@ -5,7 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Star, MapPin, Sparkles, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const TopLocalPicks = () => {
+interface TopLocalPicksProps {
+  category?: string;
+  searchQuery?: string;
+}
+
+const TopLocalPicks = ({ category = 'All', searchQuery = '' }: TopLocalPicksProps) => {
   const navigate = useNavigate();
   const [topShops, setTopShops] = useState<any[]>([]);
   const [aiInsight, setAiInsight] = useState<string>('');
@@ -13,7 +18,7 @@ const TopLocalPicks = () => {
 
   useEffect(() => {
     fetchRecommendations();
-  }, []);
+  }, [category, searchQuery]);
 
   const fetchRecommendations = async () => {
     try {
@@ -39,7 +44,8 @@ const TopLocalPicks = () => {
           userPreferences: {
             prioritize: 'rating',
             includeDeals: true,
-            radius: 5000
+            radius: 5000,
+            category: category !== 'All' ? category : undefined
           }
         }
       });
@@ -55,16 +61,22 @@ const TopLocalPicks = () => {
     } catch (error) {
       console.error('Error fetching recommendations:', error);
       // Fallback to fetching top-rated shops directly
-      const { data: fallbackShops } = await supabase
+      // Fallback to fetching top-rated shops directly
+      let query = supabase
         .from('shops')
         .select('*')
         .eq('verified', true)
-        .order('rating', { ascending: false })
-        .limit(3);
+        .order('rating', { ascending: false });
+
+      if (category && category !== 'All') {
+        query = query.eq('category', category);
+      }
+      
+      const { data: fallbackShops } = await query.limit(3);
       
       if (fallbackShops) {
         setTopShops(fallbackShops);
-        setAiInsight('Top rated shops in your area');
+        setAiInsight(category === 'All' ? 'Top rated shops in your area' : `Top rated ${category} in your area`);
       }
     } finally {
       setLoading(false);

@@ -286,7 +286,9 @@ const JobBoard = () => {
           {filteredJobs.length === 0 && (
             <div className="text-center py-12 animate-fade-in">
               <Briefcase className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground text-lg">No jobs found matching your search</p>
+              <p className="text-muted-foreground text-lg">
+                {jobs.length === 0 ? "No jobs have been posted yet. Check back soon!" : "No jobs found matching your search"}
+              </p>
             </div>
           )}
         </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Fuse from 'fuse.js';
 import MapView from '@/components/MapView';
@@ -54,6 +54,7 @@ const Index = () => {
   const [mapFilter, setMapFilter] = useState<'all' | 'deals' | 'new' | 'open' | 'closed'>('all');
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isVoiceOpen, setIsVoiceOpen] = useState(false);
+  const resultsRef = useRef<HTMLDivElement>(null);
   
   const { isProcessing: isImageProcessing, searchByImage } = useImageSearch();
 
@@ -78,12 +79,23 @@ const Index = () => {
   const handleSearchSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (searchQuery.trim()) {
-      if (!isSmartMode) {
-        setIsSmartMode(true);
+      if (isSmartMode) {
+        await performSmartSearch(searchQuery);
       }
-      await performSmartSearch(searchQuery);
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
     }
   };
+
+  // Scroll on category change
+  useEffect(() => {
+    if (selectedCategory !== 'All') {
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [selectedCategory]);
 
   const toggleSmartSearch = async () => {
     if (isSmartMode) {
@@ -466,7 +478,7 @@ const Index = () => {
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 pb-8">
+      <div ref={resultsRef} className="container mx-auto px-4 pb-8">
         {isLoading ? (
           <div className="flex items-center justify-center h-96">
             <div className="text-muted-foreground">Loading shops...</div>
@@ -480,7 +492,7 @@ const Index = () => {
             <DiscountCarousel />
 
             {/* Top Local Picks */}
-            <TopLocalPicks />
+            <TopLocalPicks category={selectedCategory} searchQuery={searchQuery} />
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredShops.map((shop, index) => (

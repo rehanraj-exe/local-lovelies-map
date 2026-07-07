@@ -122,7 +122,11 @@ const ShopQuickView = ({ shop, onClose }: ShopQuickViewProps) => {
             <Button
               variant="outline"
               className="gap-2"
-              onClick={() => window.open(`tel:${shop.phone}`)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                window.open(`tel:${shop.phone}`);
+              }}
             >
               <Phone className="w-4 h-4" />
               Call
@@ -130,7 +134,9 @@ const ShopQuickView = ({ shop, onClose }: ShopQuickViewProps) => {
             <Button
               variant="outline"
               className="gap-2"
-              onClick={() => {
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 const url = `https://www.google.com/maps/dir/?api=1&destination=${shop.latitude},${shop.longitude}`;
                 window.open(url, '_blank', 'noopener,noreferrer');
               }}

@@ -56,10 +56,8 @@ export const useSmartSearch = () => {
 
       return matchesArray;
     } catch (error) {
-      console.error('Smart search failed:', error);
-      toast.error('AI Search failed', {
-        description: 'Please try again or use standard search.'
-      });
+      console.error('Smart search failed, falling back to standard search:', error);
+      // Fallback silently without throwing a disruptive error toast
       setIsSmartMode(false);
       return null;
     } finally {
