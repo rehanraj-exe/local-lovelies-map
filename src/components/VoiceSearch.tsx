@@ -16,6 +16,7 @@ export const VoiceSearch = ({ isOpen, onClose, onTranscript }: VoiceSearchProps)
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioLevel, setAudioLevel] = useState(0);
   const [interimTranscript, setInterimTranscript] = useState('');
+  const transcriptRef = useRef('');
   const recognitionRef = useRef<any>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -109,9 +110,12 @@ export const VoiceSearch = ({ isOpen, onClose, onTranscript }: VoiceSearchProps)
           }
         }
         
-        setInterimTranscript(interimStr || finalStr);
+        const currentText = interimStr || finalStr;
+        setInterimTranscript(currentText);
+        transcriptRef.current = currentText;
         
         if (finalStr) {
+          transcriptRef.current = ''; // clear immediately to prevent onend from double-submitting
           setIsProcessing(true);
           setTimeout(() => {
             toast.success('Voice recognized!', {
@@ -147,6 +151,21 @@ export const VoiceSearch = ({ isOpen, onClose, onTranscript }: VoiceSearchProps)
       recognition.onend = () => {
         setIsRecording(false);
         if (timerRef.current) clearInterval(timerRef.current);
+        
+        // If it ended naturally but didn't trigger handleClose via finalStr in onresult,
+        // we should process whatever we have or close it.
+        const currentText = transcriptRef.current;
+        if (currentText) {
+          setIsProcessing(true);
+          setTimeout(() => {
+            toast.success('Voice recognized!', { description: `"${currentText}"` });
+            onTranscript(currentText);
+            handleClose();
+          }, 500);
+        } else {
+          // No speech detected, just close
+          handleClose();
+        }
       };
 
       recognition.start();
@@ -167,7 +186,7 @@ export const VoiceSearch = ({ isOpen, onClose, onTranscript }: VoiceSearchProps)
       streamRef.current = null;
     }
     if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-      audioContextRef.current.close();
+      audioContextRef.current.close().catch(() => {});
       audioContextRef.current = null;
     }
     if (recognitionRef.current) {
@@ -176,14 +195,34 @@ export const VoiceSearch = ({ isOpen, onClose, onTranscript }: VoiceSearchProps)
     if (timerRef.current) {
       clearInterval(timerRef.current);
     }
+    
+    // Manual stop: process whatever transcript we captured so far
+    const currentText = transcriptRef.current;
+    if (currentText) {
+      setIsProcessing(true);
+      setTimeout(() => {
+        toast.success('Voice recognized!', {
+          description: `"${currentText}"`
+        });
+        onTranscript(currentText);
+        handleClose();
+      }, 500);
+    } else {
+      handleClose();
+    }
   };
 
   const handleClose = () => {
-    stopRecording();
+    activeRef.current = false;
     setIsRecording(false);
     setIsProcessing(false);
     setRecordingTime(0);
     setAudioLevel(0);
+    setInterimTranscript('');
+    transcriptRef.current = '';
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch {}
+    }
     onClose();
   };
 
