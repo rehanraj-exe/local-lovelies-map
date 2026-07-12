@@ -56,18 +56,18 @@ const Index = () => {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isVoiceOpen, setIsVoiceOpen] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
-  
+
   const { isProcessing: isImageProcessing, searchByImage } = useImageSearch();
 
   // Smart Search hook
-  const { 
-    isSearching: isAISearching, 
-    aiMatches, 
+  const {
+    isSearching: isAISearching,
+    aiMatches,
     setAiMatches,
-    isSmartMode, 
-    setIsSmartMode, 
-    performSmartSearch, 
-    clearSmartSearch 
+    isSmartMode,
+    setIsSmartMode,
+    performSmartSearch,
+    clearSmartSearch
   } = useSmartSearch();
 
   // Automatically reset smart search when search query is cleared
@@ -122,7 +122,7 @@ const Index = () => {
     const results = await searchByImage(imageData);
     if (results.matches && results.matches.length > 0) {
       setSearchQuery(results.analysis?.guess || 'Image search results');
-      
+
       // Update smart search state with the matches from the image LLM call
       setIsSmartMode(true);
       const matchesDict: Record<string, { score: number; reason: string }> = {};
@@ -190,16 +190,16 @@ const Index = () => {
     // Apply other filters
     return results.filter((shop) => {
       const matchesCategory = selectedCategory === 'All' || shop.category === selectedCategory;
-      
+
       // Apply map filter
       const isNew = new Date(shop.created_at || '').getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000;
-      const matchesMapFilter = 
+      const matchesMapFilter =
         mapFilter === 'all' ||
         (mapFilter === 'deals' && shop.verified) ||
         (mapFilter === 'new' && isNew) ||
         (mapFilter === 'open' && shop.open_now) ||
         (mapFilter === 'closed' && !shop.open_now);
-      
+
       return matchesCategory && matchesMapFilter;
     });
   }, [shops, fuse, selectedCategory, searchQuery, mapFilter, isSmartMode, aiMatches]);
@@ -217,7 +217,7 @@ const Index = () => {
           className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/50 to-background"></div>
-        
+
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-2 drop-shadow-lg">
             Re:Local
@@ -248,11 +248,10 @@ const Index = () => {
                 size="icon"
                 type="button"
                 onClick={toggleSmartSearch}
-                className={`rounded-full transition-all ${
-                  isSmartMode 
-                    ? 'bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 hover:from-purple-700 hover:to-pink-700 text-white border-transparent shadow-glow animate-pulse-soft' 
+                className={`rounded-full transition-all ${isSmartMode
+                    ? 'bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 hover:from-purple-700 hover:to-pink-700 text-white border-transparent shadow-glow animate-pulse-soft'
                     : ''
-                }`}
+                  }`}
                 title={isSmartMode ? "Smart AI Search Active (Click to disable)" : "Enable Smart AI Search"}
                 disabled={isAISearching}
               >
@@ -300,7 +299,7 @@ const Index = () => {
             <div className="flex gap-2 items-center">
               <LanguageSelector />
               <Cart />
-              
+
               <Button
                 variant="default"
                 size="sm"
@@ -322,7 +321,7 @@ const Index = () => {
                   Wallet
                 </Button>
               )}
-              
+
               <Button
                 variant="outline"
                 size="sm"
@@ -332,7 +331,7 @@ const Index = () => {
                 <Briefcase className="w-4 h-4 mr-2" />
                 Jobs
               </Button>
-              
+
               {user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -511,61 +510,61 @@ const Index = () => {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredShops.map((shop, index) => (
-              <div
-                key={shop.id}
-                className="bg-card rounded-2xl overflow-hidden shadow-soft hover:shadow-glow transition-all duration-300 cursor-pointer border border-border hover:scale-105 hover:-translate-y-1 animate-slide-up"
-                style={{ animationDelay: `${index * 50}ms` }}
-                onClick={() => navigate(`/shop/${shop.id}`)}
-              >
-                <div className="relative h-48 overflow-hidden">
-                  <img
-                    src={shop.photos?.[0] || '/placeholder.svg'}
-                    alt={shop.name}
-                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
-                  />
-                  {!shop.open_now && (
-                    <Badge variant="destructive" className="absolute top-3 right-3">
-                      Closed
-                    </Badge>
-                  )}
-                  {shop.open_now && (
-                    <Badge variant="success" className="absolute top-3 right-3 animate-pulse-soft">
-                      Open Now
-                    </Badge>
-                  )}
-                </div>
-                <div className="p-4">
-                  <h3 className="font-semibold text-lg">{shop.name}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {shop.category}
-                    {shop.subcategory && ` • ${shop.subcategory}`}
-                  </p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <div className="flex items-center gap-1">
-                      <span className="text-warning">★</span>
-                      <span className="font-medium">{shop.rating}</span>
-                      <span className="text-xs text-muted-foreground">({shop.review_count})</span>
-                    </div>
-                    {shop.verified && (
-                      <Badge variant="outline" className="text-xs">
-                        ✓ Verified
+              {filteredShops.map((shop, index) => (
+                <div
+                  key={shop.id}
+                  className="bg-card rounded-2xl overflow-hidden shadow-soft hover:shadow-glow transition-all duration-300 cursor-pointer border border-border hover:scale-105 hover:-translate-y-1 animate-slide-up"
+                  style={{ animationDelay: `${index * 50}ms` }}
+                  onClick={() => navigate(`/shop/${shop.id}`)}
+                >
+                  <div className="relative h-48 overflow-hidden">
+                    <img
+                      src={shop.photos?.[0] || '/placeholder.svg'}
+                      alt={shop.name}
+                      className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                    />
+                    {!shop.open_now && (
+                      <Badge variant="destructive" className="absolute top-3 right-3">
+                        Closed
+                      </Badge>
+                    )}
+                    {shop.open_now && (
+                      <Badge variant="success" className="absolute top-3 right-3 animate-pulse-soft">
+                        Open Now
                       </Badge>
                     )}
                   </div>
-                  <div className="flex items-center gap-1 mt-2 text-xs font-medium text-primary">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>{shop.hours?.monday?.open || '9:00 AM'} - {shop.hours?.monday?.close || '9:00 PM'}</span>
-                  </div>
-                  {isSmartMode && aiMatches[shop.id] && (
-                    <div className="mt-2.5 px-3 py-2 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-700 dark:text-purple-300 flex items-start gap-1.5 animate-fade-in">
-                      <Sparkles className="w-3.5 h-3.5 mt-0.5 text-purple-500 flex-shrink-0" />
-                      <span>{aiMatches[shop.id].reason}</span>
+                  <div className="p-4">
+                    <h3 className="font-semibold text-lg">{shop.name}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {shop.category}
+                      {shop.subcategory && ` • ${shop.subcategory}`}
+                    </p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <div className="flex items-center gap-1">
+                        <span className="text-warning">★</span>
+                        <span className="font-medium">{shop.rating}</span>
+                        <span className="text-xs text-muted-foreground">({shop.review_count})</span>
+                      </div>
+                      {shop.verified && (
+                        <Badge variant="outline" className="text-xs">
+                          ✓ Verified
+                        </Badge>
+                      )}
                     </div>
-                  )}
+                    <div className="flex items-center gap-1 mt-2 text-xs font-medium text-primary">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>{shop.hours?.monday?.open || '9:00 AM'} - {shop.hours?.monday?.close || '9:00 PM'}</span>
+                    </div>
+                    {isSmartMode && aiMatches[shop.id] && (
+                      <div className="mt-2.5 px-3 py-2 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-700 dark:text-purple-300 flex items-start gap-1.5 animate-fade-in">
+                        <Sparkles className="w-3.5 h-3.5 mt-0.5 text-purple-500 flex-shrink-0" />
+                        <span>{aiMatches[shop.id].reason}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
             </div>
           </div>
         )}
@@ -581,7 +580,7 @@ const Index = () => {
 
       {/* AI Chat Assistant */}
       <AIChatAssistant />
-      
+
       {/* Camera Search Modal */}
       <CameraSearch
         isOpen={isCameraOpen}
@@ -595,10 +594,11 @@ const Index = () => {
         onClose={() => setIsVoiceOpen(false)}
         onTranscript={handleVoiceTranscript}
       />
-      
+
       <Footer />
     </div>
   );
 };
 
 export default Index;
+

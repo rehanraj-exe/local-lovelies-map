@@ -175,7 +175,7 @@ export const AIChatAssistant = () => {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 z-40 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full p-4 shadow-lg transition-all hover:scale-110 animate-pulse-soft"
+          className="fixed bottom-32 md:bottom-6 right-4 md:right-6 z-[100] bg-primary hover:bg-primary/90 text-primary-foreground rounded-full p-4 shadow-lg transition-all hover:scale-110 animate-pulse-soft"
           aria-label="Open chat assistant"
         >
           <MessageCircle className="w-6 h-6" />
@@ -184,7 +184,7 @@ export const AIChatAssistant = () => {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-6 right-6 z-40 w-96 h-[500px] bg-card border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+        <div className="fixed bottom-32 md:bottom-6 right-4 md:right-6 z-[100] w-[calc(100vw-32px)] sm:w-96 h-[400px] md:h-[500px] max-h-[calc(100vh-160px)] bg-card border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden">
           {/* Header */}
           <div className="bg-primary text-primary-foreground p-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
