@@ -148,5 +148,59 @@ export const PRODUCT_IMAGE_MAP: Record<string, string> = {
   "geometric glass vase": "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=500&q=80",
   "steel leaf rake": "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=500&q=80",
   "heirloom vegetable seeds": "https://images.unsplash.com/photo-1580136608260-4ebf15fac612?auto=format&fit=crop&w=500&q=80",
-  "soy wax scented candle": "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=500&q=80"
+  "soy wax scented candle": "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=500&q=80",
+  // Baby Products
+  "organic cotton onesie": "https://images.unsplash.com/photo-1519689680058-324335c77eba?auto=format&fit=crop&w=500&q=80",
+  "smart baby monitor": "https://images.unsplash.com/photo-1555252834-08f32230da37?auto=format&fit=crop&w=500&q=80",
+  "ergonomic baby carrier": "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=500&q=80",
+  
+  // Bags, Wallets and Luggage
+  "leather weekend duffel": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=500&q=80",
+  "anti-theft backpack": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=500&q=80",
+  "minimalist card holder wallet": "https://images.unsplash.com/photo-1627123424574-724758594e93?auto=format&fit=crop&w=500&q=80",
+  
+  // Beauty
+  "hydrating face serum": "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=500&q=80",
+  "matte liquid lipstick": "https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=500&q=80",
+  "volumizing mascara": "https://images.unsplash.com/photo-1596755389378-c11f7c5bf388?auto=format&fit=crop&w=500&q=80",
+  
+  // Books
+  "the midnight library": "https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=500&q=80",
+  "atomic habits": "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&w=500&q=80",
+  "gourmet cooking guide": "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&w=500&q=80",
+  
+  // Computers & Accessories
+  "wireless mechanical keyboard": "https://images.unsplash.com/photo-1595225476474-87563907a212?auto=format&fit=crop&w=500&q=80",
+  "ultra-wide gaming monitor": "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=500&q=80",
+  "usb-c hub": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=500&q=80",
+  
+  // Home Improvement
+  "cordless power drill": "https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&w=500&q=80",
+  "smart wifi thermostat": "https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=500&q=80",
+  "led strip lights": "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=500&q=80",
+  
+  // Kindle Store
+  "kindle paperwhite": "https://images.unsplash.com/photo-1511556820780-d912e42b4980?auto=format&fit=crop&w=500&q=80",
+  "leather kindle cover": "https://images.unsplash.com/photo-1511556820780-d912e42b4980?auto=format&fit=crop&w=500&q=80",
+  "screen protector for kindle": "https://images.unsplash.com/photo-1511556820780-d912e42b4980?auto=format&fit=crop&w=500&q=80",
+  
+  // Movies & TV Shows
+  "the lord of the rings 4k box set": "https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?auto=format&fit=crop&w=500&q=80",
+  "sci-fi anthology series": "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=500&q=80",
+  "classic movies collection": "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=500&q=80",
+  
+  // Toys & Games
+  "educational building blocks": "https://images.unsplash.com/photo-1587654780291-39c9404d746b?auto=format&fit=crop&w=500&q=80",
+  "family board game night set": "https://images.unsplash.com/photo-1610890716171-6b1bb98ffaed?auto=format&fit=crop&w=500&q=80",
+  "remote control drone": "https://images.unsplash.com/photo-1507582020474-9a35b7d455d9?auto=format&fit=crop&w=500&q=80",
+  
+  // Video Games
+  "next-gen gaming console": "https://images.unsplash.com/photo-1486401899868-0e435ed85128?auto=format&fit=crop&w=500&q=80",
+  "wireless gaming controller": "https://images.unsplash.com/photo-1600080972464-8e5f35f63d08?auto=format&fit=crop&w=500&q=80",
+  "epic rpg adventure game": "https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=500&q=80",
+  
+  // Watches
+  "chronograph men's watch": "https://images.unsplash.com/photo-1524592094714-0f0654e20314?auto=format&fit=crop&w=500&q=80",
+  "smart fitness tracker watch": "https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?auto=format&fit=crop&w=500&q=80",
+  "elegant rose gold watch": "https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?auto=format&fit=crop&w=500&q=80"
 };
