@@ -55,7 +55,9 @@ const Index = () => {
   const [mapFilter, setMapFilter] = useState<'all' | 'deals' | 'new' | 'open' | 'closed'>('all');
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isVoiceOpen, setIsVoiceOpen] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
+  const searchContainerRef = useRef<HTMLFormElement>(null);
 
   const { isProcessing: isImageProcessing, searchByImage } = useImageSearch();
 
@@ -76,6 +78,19 @@ const Index = () => {
       clearSmartSearch();
     }
   }, [searchQuery]);
+
+  // Click outside to close suggestions
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleSearchSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -169,6 +184,12 @@ const Index = () => {
     });
   }, [shops]);
 
+  // Generate dynamic search suggestions
+  const searchSuggestions = useMemo(() => {
+    if (!searchQuery.trim() || isSmartMode) return [];
+    return fuse.search(searchQuery).slice(0, 5).map(result => result.item);
+  }, [searchQuery, fuse, isSmartMode]);
+
   // Filter shops based on category, search, and open status with fuzzy matching or AI smart search
   const filteredShops = useMemo(() => {
     let results = shops;
@@ -233,15 +254,44 @@ const Index = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col md:flex-row gap-4 items-center">
             {/* Search with voice */}
-            <form onSubmit={handleSearchSubmit} className="relative flex-1 w-full flex items-center gap-2">
+            <form ref={searchContainerRef} onSubmit={handleSearchSubmit} className="relative flex-1 w-full flex items-center gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   placeholder={isSmartMode ? "Describe what you want (e.g. delicious warm coffee)..." : "Search shops, categories, or areas..."}
                   className={`pl-10 pr-4 rounded-full border-border transition-all ${isSmartMode ? 'ring-2 ring-purple-500/50 border-purple-500' : ''}`}
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setShowSuggestions(true);
+                  }}
+                  onFocus={() => setShowSuggestions(true)}
                 />
+                
+                {/* Search Suggestions Dropdown */}
+                {showSuggestions && searchSuggestions.length > 0 && !isSmartMode && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg overflow-hidden z-50 animate-fade-in">
+                    {searchSuggestions.map((shop, idx) => (
+                      <div
+                        key={shop.id}
+                        className={`px-4 py-3 cursor-pointer hover:bg-muted transition-colors flex items-center gap-3 ${idx !== searchSuggestions.length - 1 ? 'border-b border-border/50' : ''}`}
+                        onClick={() => {
+                          setSearchQuery(shop.name);
+                          setShowSuggestions(false);
+                          navigate(`/shop/${shop.id}`);
+                        }}
+                      >
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <Store className="w-4 h-4 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{shop.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{shop.category} • {shop.address}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               <Button
                 variant={isSmartMode ? "default" : "outline"}
