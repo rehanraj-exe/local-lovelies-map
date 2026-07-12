@@ -261,6 +261,40 @@ const Checkout = () => {
           return;
         }
 
+        // Pre-process wallet payment before creating order
+        let initialStatus = 'pending';
+        let initialPaymentStatus = 'pending';
+
+        if (paymentMethod === 'wallet') {
+          // Check sufficient balance (should already be validated, but checking again)
+          if (walletBalance < totalAmount) {
+            toast({
+              title: 'Insufficient balance',
+              description: 'Please add money to your wallet',
+              variant: 'destructive'
+            });
+            setLoading(false);
+            return;
+          }
+
+          // Deduct from wallet first
+          const { error: walletError } = await supabase
+            .from('wallets')
+            .update({ 
+              balance: walletBalance - totalAmount 
+            })
+            .eq('user_id', user.id);
+
+          if (walletError) throw walletError;
+
+          // Wallet deduction successful, set initial statuses to reflect payment completed
+          initialStatus = 'preparing';
+          initialPaymentStatus = 'completed';
+          
+          // Update local wallet balance state immediately
+          setWalletBalance(prev => prev - totalAmount);
+        }
+
         // Create order
         const { data: order, error: orderError } = await supabase
           .from('orders')
@@ -271,9 +305,9 @@ const Checkout = () => {
             delivery_address: address,
             delivery_phone: phone,
             delivery_notes: notes,
-            status: 'pending',
+            status: initialStatus,
             payment_method: paymentMethod === 'bank_upi' || paymentMethod === 'other_upi' ? 'upi' : paymentMethod,
-            payment_status: 'pending',
+            payment_status: initialPaymentStatus,
             payment_id: (paymentMethod === 'bank_upi' || paymentMethod === 'other_upi') ? shop.upi_id : null
           })
           .select()
@@ -295,52 +329,16 @@ const Checkout = () => {
 
         if (itemsError) throw itemsError;
 
-        // Handle wallet payment
-        if (paymentMethod === 'wallet') {
-          // Check sufficient balance (should already be validated)
-          if (walletBalance < totalAmount) {
-            toast({
-              title: 'Insufficient balance',
-              description: 'Please add money to your wallet',
-              variant: 'destructive'
-            });
-            setLoading(false);
-            return;
-          }
-
-          // Deduct from wallet
-          const { error: walletError } = await supabase
-            .from('wallets')
-            .update({ 
-              balance: walletBalance - totalAmount 
-            })
-            .eq('user_id', user.id);
-
-          if (walletError) throw walletError;
-
-          // Update order payment status
-          await supabase
-            .from('orders')
-            .update({ 
-              payment_status: 'completed',
-              status: 'preparing'
-            })
-            .eq('id', order.id);
-
-          // Create transaction record
-          if (currentUser) {
-            await supabase.from('transactions').insert({
-              user_id: currentUser.id,
-              shop_id: shopId,
-              order_id: order.id,
-              amount: totalAmount,
-              payment_method: 'wallet',
-              status: 'completed'
-            });
-          }
-
-          // Update local wallet balance
-          setWalletBalance(prev => prev - totalAmount);
+        // If wallet, create transaction record now that order exists
+        if (paymentMethod === 'wallet' && currentUser) {
+          await supabase.from('transactions').insert({
+            user_id: currentUser.id,
+            shop_id: shopId,
+            order_id: order.id,
+            amount: totalAmount,
+            payment_method: 'wallet',
+            status: 'completed'
+          });
         }
 
         // Store order details for UPI redirect

@@ -4,8 +4,26 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Package, Truck, Home } from 'lucide-react';
 import { format } from 'date-fns';
+
+const ORDER_STEPS = [
+  { id: 'placed', label: 'Order Placed', icon: CheckCircle2 },
+  { id: 'preparing', label: 'Preparing', icon: Package },
+  { id: 'on_the_way', label: 'Shipped', icon: Truck },
+  { id: 'delivered', label: 'Delivered', icon: Home },
+];
+
+const getStepIndex = (status: string) => {
+  switch (status) {
+    case 'pending':
+    case 'confirmed': return 0;
+    case 'preparing': return 1;
+    case 'on_the_way': return 2;
+    case 'delivered': return 3;
+    default: return -1;
+  }
+};
 
 interface Order {
   id: string;
@@ -138,9 +156,50 @@ const Orders = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+                <div className="space-y-6">
+                  {/* Order Tracker */}
+                  {getStepIndex(order.status) >= 0 && order.status !== 'cancelled' && (
+                    <div className="py-2 mb-4">
+                      <div className="relative">
+                        {/* Progress Bar Background */}
+                        <div className="absolute top-4 left-0 w-full h-1 bg-muted -translate-y-1/2 rounded-full" />
+                        
+                        {/* Active Progress Bar */}
+                        <div 
+                          className="absolute top-4 left-0 h-1 bg-primary -translate-y-1/2 rounded-full transition-all duration-500"
+                          style={{ width: `${(getStepIndex(order.status) / (ORDER_STEPS.length - 1)) * 100}%` }}
+                        />
+
+                        <div className="relative flex justify-between">
+                          {ORDER_STEPS.map((step, index) => {
+                            const isCompleted = index <= getStepIndex(order.status);
+                            const isActive = index === getStepIndex(order.status);
+                            const StepIcon = step.icon;
+                            
+                            return (
+                              <div key={step.id} className="flex flex-col items-center gap-2 relative bg-card px-2">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-colors z-10 ${
+                                  isCompleted 
+                                    ? 'bg-primary border-primary text-primary-foreground' 
+                                    : 'bg-card border-muted text-muted-foreground'
+                                }`}>
+                                  <StepIcon className={`w-4 h-4 ${isActive ? 'animate-pulse' : ''}`} />
+                                </div>
+                                <span className={`text-[10px] sm:text-xs font-medium text-center ${
+                                  isCompleted ? 'text-foreground' : 'text-muted-foreground'
+                                }`}>
+                                  {step.label}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <div>
-                    <h3 className="font-semibold mb-2">Items</h3>
+                    <h3 className="font-semibold mb-3">Items</h3>
                     {order.order_items.map((item, idx) => (
                       <div key={idx} className="flex justify-between text-sm py-1">
                         <span>{item.product.name} x{item.quantity}</span>
