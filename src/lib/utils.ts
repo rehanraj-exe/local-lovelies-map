@@ -1,9 +1,10 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { PRODUCT_IMAGE_MAP } from './productImageMap';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
-import { PRODUCT_IMAGE_MAP } from './productImageMap';
+}
 
 export function getProductImage(url: string | null | undefined, name: string) {
   if (!url || url.includes('unsplash.com') || url.includes('picsum.photos') || url.includes('placeholder')) {
