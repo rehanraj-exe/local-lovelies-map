@@ -9,16 +9,19 @@ import { format } from 'date-fns';
 
 const ORDER_STEPS = [
   { id: 'placed', label: 'Order Placed', icon: CheckCircle2 },
-  { id: 'preparing', label: 'Preparing', icon: Package },
-  { id: 'on_the_way', label: 'Shipped', icon: Truck },
+  { id: 'shipping', label: 'Shipping', icon: Package },
+  { id: 'shipped', label: 'Shipped', icon: Truck },
   { id: 'delivered', label: 'Delivered', icon: Home },
 ];
 
 const getStepIndex = (status: string) => {
   switch (status) {
     case 'pending':
+    case 'placed':
     case 'confirmed': return 0;
+    case 'shipping':
     case 'preparing': return 1;
+    case 'shipped':
     case 'on_the_way': return 2;
     case 'delivered': return 3;
     default: return -1;
@@ -96,8 +99,11 @@ const Orders = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-500';
+      case 'placed':
       case 'confirmed': return 'bg-blue-500';
+      case 'shipping':
       case 'preparing': return 'bg-purple-500';
+      case 'shipped':
       case 'on_the_way': return 'bg-orange-500';
       case 'delivered': return 'bg-green-500';
       case 'cancelled': return 'bg-red-500';

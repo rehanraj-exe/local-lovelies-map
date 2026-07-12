@@ -79,6 +79,74 @@ const ShopProfile = () => {
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [shopOwnerPlan, setShopOwnerPlan] = useState<string>('free');
 
+  const handleAddToCart = async (product: any, redirect: boolean = false) => {
+    if (!shop) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        // Logged-in user: save to database
+        const { data: existing } = await supabase
+          .from('cart_items')
+          .select('id, quantity')
+          .eq('user_id', user.id)
+          .eq('product_id', product.id)
+          .single();
+
+        if (existing) {
+          await supabase
+            .from('cart_items')
+            .update({ quantity: existing.quantity + 1 })
+            .eq('id', existing.id);
+        } else {
+          await supabase
+            .from('cart_items')
+            .insert({
+              user_id: user.id,
+              product_id: product.id,
+              shop_id: shop.id,
+              quantity: 1
+            });
+        }
+      } else {
+        // Guest user: save to localStorage
+        const CART_KEY = 'guest_cart';
+        const cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+        const existingIndex = cart.findIndex((item: any) => item.product_id === product.id);
+        
+        if (existingIndex >= 0) {
+          cart[existingIndex].quantity += 1;
+        } else {
+          cart.push({
+            product_id: product.id,
+            shop_id: shop.id,
+            quantity: 1,
+            product: {
+              id: product.id,
+              name: product.name,
+              price: product.price,
+              image_url: product.image_url
+            },
+            shop: {
+              id: shop.id,
+              name: shop.name
+            }
+          });
+        }
+        localStorage.setItem(CART_KEY, JSON.stringify(cart));
+      }
+      
+      if (redirect) {
+        navigate('/checkout');
+      } else {
+        toast.success('Added to cart!');
+      }
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      toast.error('Failed to add to cart');
+    }
+  };
+
   useEffect(() => {
     const fetchShopData = async () => {
       if (!id) return;
@@ -530,74 +598,23 @@ const ShopProfile = () => {
                               <Badge variant="default">Featured</Badge>
                             )}
                           </div>
-                          <Button 
-                            className="w-full" 
-                            onClick={async () => {
-                              try {
-                                const { data: { user } } = await supabase.auth.getUser();
-                                
-                                if (user) {
-                                  // Logged-in user: save to database
-                                  const { data: existing } = await supabase
-                                    .from('cart_items')
-                                    .select('id, quantity')
-                                    .eq('user_id', user.id)
-                                    .eq('product_id', product.id)
-                                    .single();
-
-                                  if (existing) {
-                                    await supabase
-                                      .from('cart_items')
-                                      .update({ quantity: existing.quantity + 1 })
-                                      .eq('id', existing.id);
-                                  } else {
-                                    await supabase
-                                      .from('cart_items')
-                                      .insert({
-                                        user_id: user.id,
-                                        product_id: product.id,
-                                        shop_id: shop.id,
-                                        quantity: 1
-                                      });
-                                  }
-                                } else {
-                                  // Guest user: save to localStorage
-                                  const CART_KEY = 'guest_cart';
-                                  const cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
-                                  const existingIndex = cart.findIndex((item: any) => item.product_id === product.id);
-                                  
-                                  if (existingIndex >= 0) {
-                                    cart[existingIndex].quantity += 1;
-                                  } else {
-                                    cart.push({
-                                      product_id: product.id,
-                                      shop_id: shop.id,
-                                      quantity: 1,
-                                      product: {
-                                        id: product.id,
-                                        name: product.name,
-                                        price: product.price,
-                                        image_url: product.image_url
-                                      },
-                                      shop: {
-                                        id: shop.id,
-                                        name: shop.name
-                                      }
-                                    });
-                                  }
-                                  localStorage.setItem(CART_KEY, JSON.stringify(cart));
-                                }
-                                
-                                toast.success('Added to cart!');
-                              } catch (error) {
-                                console.error('Error adding to cart:', error);
-                                toast.error('Failed to add to cart');
-                              }
-                            }}
-                            disabled={!product.in_stock}
-                          >
-                            {product.in_stock ? 'Add to Cart' : 'Out of Stock'}
-                          </Button>
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button 
+                              variant="outline"
+                              className="w-full" 
+                              onClick={() => handleAddToCart(product, false)}
+                              disabled={!product.in_stock}
+                            >
+                              {product.in_stock ? 'Add to Cart' : 'Out of Stock'}
+                            </Button>
+                            <Button 
+                              className="w-full" 
+                              onClick={() => handleAddToCart(product, true)}
+                              disabled={!product.in_stock}
+                            >
+                              Buy Now
+                            </Button>
+                          </div>
                         </div>
                       </Card>
                     ))}

@@ -168,6 +168,10 @@ export const PRODUCT_IMAGE_MAP: Record<string, string> = {
   "the midnight library": "https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=500&q=80",
   "atomic habits": "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&w=500&q=80",
   "gourmet cooking guide": "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&w=500&q=80",
+  "leather bound journal": "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=500&q=80",
+  "gold nib fountain pen": "https://images.unsplash.com/photo-1583485088034-697b5a624f11?auto=format&fit=crop&w=500&q=80",
+  "bestselling mystery novel": "https://images.unsplash.com/photo-1612969308146-066d55f37ccb?auto=format&fit=crop&w=500&q=80",
+
   
   // Computers & Accessories
   "wireless mechanical keyboard": "https://images.unsplash.com/photo-1595225476474-87563907a212?auto=format&fit=crop&w=500&q=80",

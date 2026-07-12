@@ -50,6 +50,7 @@ const Index = () => {
   const [selectedShopId, setSelectedShopId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [shops, setShops] = useState<Shop[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [mapFilter, setMapFilter] = useState<'all' | 'deals' | 'new' | 'open' | 'closed'>('all');
@@ -148,24 +149,33 @@ const Index = () => {
     }
   };
 
-  // Fetch shops from database
+  // Fetch shops and products from database
   useEffect(() => {
-    const fetchShops = async () => {
+    const fetchData = async () => {
       setIsLoading(true);
-      const { data, error } = await supabase
-        .from('shops')
-        .select('*')
-        .eq('verified', true);
+      const [
+        { data: shopsData, error: shopsError },
+        { data: productsData, error: productsError }
+      ] = await Promise.all([
+        supabase
+          .from('shops')
+          .select('*')
+          .eq('verified', true),
+        supabase
+          .from('products')
+          .select('*, shop:shops(id, name)')
+      ]);
 
-      if (error) {
-        console.error('Error fetching shops:', error);
-      } else {
-        setShops(data || []);
-      }
+      if (shopsError) console.error('Error fetching shops:', shopsError);
+      else setShops(shopsData || []);
+
+      if (productsError) console.error('Error fetching products:', productsError);
+      else setProducts(productsData || []);
+      
       setIsLoading(false);
     };
 
-    fetchShops();
+    fetchData();
   }, []);
 
   const selectedShop = selectedShopId
@@ -175,20 +185,29 @@ const Index = () => {
   // Get unique categories from shops
   const categories = ['All', ...Array.from(new Set(shops.map(shop => shop.category)))];
 
-  // Configure fuzzy search
-  const fuse = useMemo(() => {
+  // Configure fuzzy search for shops
+  const shopFuse = useMemo(() => {
     return new Fuse(shops, {
       keys: ['name', 'category', 'subcategory', 'address', 'description'],
-      threshold: 0.4, // 0 = perfect match, 1 = match anything
+      threshold: 0.4,
       includeScore: true,
     });
   }, [shops]);
 
+  // Configure fuzzy search for products
+  const productFuse = useMemo(() => {
+    return new Fuse(products, {
+      keys: ['name', 'description'],
+      threshold: 0.4,
+      includeScore: true,
+    });
+  }, [products]);
+
   // Generate dynamic search suggestions
   const searchSuggestions = useMemo(() => {
     if (!searchQuery.trim() || isSmartMode) return [];
-    return fuse.search(searchQuery).slice(0, 5).map(result => result.item);
-  }, [searchQuery, fuse, isSmartMode]);
+    return shopFuse.search(searchQuery).slice(0, 5).map(result => result.item);
+  }, [searchQuery, shopFuse, isSmartMode]);
 
   // Filter shops based on category, search, and open status with fuzzy matching or AI smart search
   const filteredShops = useMemo(() => {
@@ -203,7 +222,7 @@ const Index = () => {
           .sort((a, b) => (aiMatches[b.id]?.score || 0) - (aiMatches[a.id]?.score || 0));
       } else {
         // Fallback to standard fuzzy search
-        const fuseResults = fuse.search(searchQuery);
+        const fuseResults = shopFuse.search(searchQuery);
         results = fuseResults.map(result => result.item);
       }
     }
@@ -223,7 +242,13 @@ const Index = () => {
 
       return matchesCategory && matchesMapFilter;
     });
-  }, [shops, fuse, selectedCategory, searchQuery, mapFilter, isSmartMode, aiMatches]);
+  }, [shops, shopFuse, selectedCategory, searchQuery, mapFilter, isSmartMode, aiMatches]);
+
+  const filteredProducts = useMemo(() => {
+    if (!searchQuery.trim() || isSmartMode) return [];
+    const fuseResults = productFuse.search(searchQuery);
+    return fuseResults.map(result => result.item);
+  }, [productFuse, searchQuery, isSmartMode]);
 
   // Count active offers (you can fetch this from offers table later)
   const activeOffers = 0; // Placeholder for now
@@ -381,6 +406,18 @@ const Index = () => {
                 <Briefcase className="w-4 h-4 mr-2" />
                 Jobs
               </Button>
+
+              {user && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/orders')}
+                  className="hidden md:flex rounded-full"
+                >
+                  <Package className="w-4 h-4 mr-2" />
+                  Orders
+                </Button>
+              )}
 
               {user ? (
                 <DropdownMenu>
@@ -546,7 +583,7 @@ const Index = () => {
           </div>
         ) : searchQuery.trim() ? (
           /* Search Results View */
-          <SearchResults shops={filteredShops} searchQuery={searchQuery} />
+          <SearchResults shops={filteredShops} products={filteredProducts} searchQuery={searchQuery} />
         ) : (
           <div className="space-y-8">
             {selectedCategory === 'All' && (

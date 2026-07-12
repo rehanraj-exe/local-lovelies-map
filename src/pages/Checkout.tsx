@@ -288,7 +288,7 @@ const Checkout = () => {
           if (walletError) throw walletError;
 
           // Wallet deduction successful, set initial statuses to reflect payment completed
-          initialStatus = 'preparing';
+          initialStatus = 'placed';
           initialPaymentStatus = 'completed';
           
           // Update local wallet balance state immediately
