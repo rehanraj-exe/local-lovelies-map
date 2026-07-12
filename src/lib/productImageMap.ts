@@ -171,6 +171,13 @@ export const PRODUCT_IMAGE_MAP: Record<string, string> = {
   "leather bound journal": "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=500&q=80",
   "gold nib fountain pen": "https://images.unsplash.com/photo-1583485088034-697b5a624f11?auto=format&fit=crop&w=500&q=80",
   "bestselling mystery novel": "https://images.unsplash.com/photo-1612969308146-066d55f37ccb?auto=format&fit=crop&w=500&q=80",
+  "daily productivity planner": "https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=500&q=80",
+  "pastel sticky notes set": "https://images.unsplash.com/photo-1586075010923-2dd4570fb338?auto=format&fit=crop&w=500&q=80",
+  "chisel tip highlighters": "https://images.unsplash.com/photo-1527546369064-a1a14a796e95?auto=format&fit=crop&w=500&q=80",
+  "wooden desk organizer": "https://images.unsplash.com/photo-1520697830682-8982958f8b8a?auto=format&fit=crop&w=500&q=80",
+  "bullet grid journal": "https://images.unsplash.com/photo-1512486130939-2c4f79935e4f?auto=format&fit=crop&w=500&q=80",
+  "magnetic bookmarks": "https://images.unsplash.com/photo-1544377193-33dce4d95d0c?auto=format&fit=crop&w=500&q=80",
+  "premium graphite pencils": "https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=500&q=80",
 
   
   // Computers & Accessories
