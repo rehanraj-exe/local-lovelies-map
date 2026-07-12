@@ -5,6 +5,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { ShoppingCart, Trash2, Plus, Minus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { getProductImage } from '@/lib/utils';
 
 interface CartItem {
   id: string;
@@ -195,7 +196,7 @@ export const Cart = () => {
               cartItems.map((item) => (
                 <div key={item.id} className="flex gap-4 border-b pb-4">
                   <img
-                    src={item.product.image_url || '/placeholder.svg'}
+                    src={getProductImage(item.product.image_url, item.product.name) || '/placeholder.svg'}
                     alt={item.product.name}
                     className="w-20 h-20 object-cover rounded"
                   />

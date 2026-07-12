@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { ArrowLeft, Plus, Edit, Trash, Store, Tag, Clock, Package, Eye, MousePointer, TrendingUp } from 'lucide-react';
+import { getProductImage } from '@/lib/utils';
 
 const ShopDashboard = () => {
   const { user } = useAuth();
@@ -568,7 +569,7 @@ const ShopDashboard = () => {
                         <div className="w-24 h-24 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                           {product.image_url ? (
                             <img
-                              src={product.image_url}
+                              src={getProductImage(product.image_url, product.name)}
                               alt={product.name}
                               className="w-full h-full object-cover"
                             />

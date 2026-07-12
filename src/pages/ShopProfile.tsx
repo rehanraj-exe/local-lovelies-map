@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { ArrowLeft, Star, MapPin, Phone, Clock, Share2, Heart, Briefcase, Navigation, X, ShoppingCart } from 'lucide-react';
+import { getProductImage } from '@/lib/utils';
 
 interface Shop {
   id: string;
@@ -512,7 +513,7 @@ const ShopProfile = () => {
                         {product.image_url && (
                           <div className="relative h-40 overflow-hidden">
                             <img
-                              src={product.image_url}
+                              src={getProductImage(product.image_url, product.name)}
                               alt={product.name}
                               className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
                             />
