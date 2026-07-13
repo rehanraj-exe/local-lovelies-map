@@ -1,163 +1,17 @@
-import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { ShoppingCart, Trash2, Plus, Minus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { getProductImage } from '@/lib/utils';
-
-interface CartItem {
-  id: string;
-  quantity: number;
-  product_id: string;
-  shop_id: string;
-  product: {
-    id: string;
-    name: string;
-    price: number;
-    image_url: string;
-  };
-  shop: {
-    id: string;
-    name: string;
-  };
-}
-
-interface LocalCartItem {
-  product_id: string;
-  shop_id: string;
-  quantity: number;
-  product: {
-    id: string;
-    name: string;
-    price: number;
-    image_url: string;
-  };
-  shop: {
-    id: string;
-    name: string;
-  };
-}
-
-const CART_STORAGE_KEY = 'guest_cart';
+import { useCart } from '@/contexts/CartContext';
 
 export const Cart = () => {
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const { cartItems, updateQuantity, removeItem } = useCart();
   const [isOpen, setIsOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (isOpen) {
-      fetchCartItems();
-    }
-  }, [isOpen]);
-
-  const getLocalCart = (): LocalCartItem[] => {
-    try {
-      const cart = localStorage.getItem(CART_STORAGE_KEY);
-      return cart ? JSON.parse(cart) : [];
-    } catch {
-      return [];
-    }
-  };
-
-  const saveLocalCart = (items: LocalCartItem[]) => {
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
-  };
-
-  const fetchCartItems = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        // Fetch from database for logged-in users
-        const { data, error } = await supabase
-          .from('cart_items')
-          .select(`
-            id,
-            quantity,
-            product_id,
-            shop_id,
-            product:products(id, name, price, image_url),
-            shop:shops(id, name)
-          `)
-          .eq('user_id', user.id);
-
-        if (error) throw error;
-        setCartItems(data as any);
-      } else {
-        // Use localStorage for guest users
-        const localCart = getLocalCart();
-        const formattedItems: CartItem[] = localCart.map((item, index) => ({
-          id: `local-${index}`,
-          quantity: item.quantity,
-          product_id: item.product_id,
-          shop_id: item.shop_id,
-          product: item.product,
-          shop: item.shop,
-        }));
-        setCartItems(formattedItems);
-      }
-    } catch (error) {
-      console.error('Error fetching cart:', error);
-    }
-  };
-
-  const updateQuantity = async (itemId: string, newQuantity: number) => {
-    if (newQuantity < 1) return;
-    
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        const { error } = await supabase
-          .from('cart_items')
-          .update({ quantity: newQuantity })
-          .eq('id', itemId);
-
-        if (error) throw error;
-      } else {
-        // Update localStorage
-        const localCart = getLocalCart();
-        const itemIndex = parseInt(itemId.replace('local-', ''));
-        if (localCart[itemIndex]) {
-          localCart[itemIndex].quantity = newQuantity;
-          saveLocalCart(localCart);
-        }
-      }
-      await fetchCartItems();
-    } catch (error) {
-      toast({ title: 'Error updating quantity', variant: 'destructive' });
-    }
-  };
-
-  const removeItem = async (itemId: string) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        const { error } = await supabase
-          .from('cart_items')
-          .delete()
-          .eq('id', itemId);
-
-        if (error) throw error;
-      } else {
-        // Remove from localStorage
-        const localCart = getLocalCart();
-        const itemIndex = parseInt(itemId.replace('local-', ''));
-        localCart.splice(itemIndex, 1);
-        saveLocalCart(localCart);
-      }
-      await fetchCartItems();
-      toast({ title: 'Item removed from cart' });
-    } catch (error) {
-      toast({ title: 'Error removing item', variant: 'destructive' });
-    }
-  };
 
   const getTotalPrice = () => {
     return cartItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);

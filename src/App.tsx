@@ -22,6 +22,7 @@ import MapPage from "./pages/MapPage";
 
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
+import { CartProvider } from "@/contexts/CartContext";
 
 const queryClient = new QueryClient();
 
@@ -32,27 +33,29 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <div className="pb-16 md:pb-0"> {/* Padding for mobile bottom nav */}
-            <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/shop/:id" element={<ShopProfile />} />
-            <Route path="/register-shop" element={<ShopRegistration />} />
-            <Route path="/dashboard" element={<ShopDashboard />} />
-            <Route path="/jobs" element={<JobBoard />} />
-            <Route path="/applications" element={<JobApplications />} />
-            <Route path="/checkout" element={<Checkout />} />
-            <Route path="/orders" element={<Orders />} />
-            <Route path="/wallet" element={<Wallet />} />
-            <Route path="/payment-processing" element={<PaymentProcessing />} />
-            <Route path="/premium" element={<Premium />} />
-            <Route path="/delivery-addresses" element={<DeliveryAddresses />} />
-            <Route path="/map" element={<MapPage />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <MobileBottomNav />
-          </div>
+          <CartProvider>
+            <div className="pb-16 md:pb-0"> {/* Padding for mobile bottom nav */}
+              <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/shop/:id" element={<ShopProfile />} />
+              <Route path="/register-shop" element={<ShopRegistration />} />
+              <Route path="/dashboard" element={<ShopDashboard />} />
+              <Route path="/jobs" element={<JobBoard />} />
+              <Route path="/applications" element={<JobApplications />} />
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/orders" element={<Orders />} />
+              <Route path="/wallet" element={<Wallet />} />
+              <Route path="/payment-processing" element={<PaymentProcessing />} />
+              <Route path="/premium" element={<Premium />} />
+              <Route path="/delivery-addresses" element={<DeliveryAddresses />} />
+              <Route path="/map" element={<MapPage />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <MobileBottomNav />
+            </div>
+          </CartProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

@@ -1,10 +1,9 @@
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Star, MapPin, Clock, Phone, Sparkles, Store, Package } from 'lucide-react';
+import { Star, MapPin, Clock, Phone, Sparkles, Store, Package, Plus, Minus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useCart } from '@/contexts/CartContext';
 
 interface Shop {
   id: string;
@@ -33,75 +32,13 @@ interface SearchResultsProps {
 }
 
 export const SearchResults = ({ shops, products = [], searchQuery }: SearchResultsProps) => {
+  const { cartItems, addToCart, updateQuantity } = useCart();
   const navigate = useNavigate();
 
-  const handleAddToCart = async (e: React.MouseEvent, product: any, redirect: boolean = false) => {
-    e.stopPropagation(); // Prevent navigating to shop profile
-    
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        // Logged-in user: save to database
-        const { data: existing } = await supabase
-          .from('cart_items')
-          .select('id, quantity')
-          .eq('user_id', user.id)
-          .eq('product_id', product.id)
-          .single();
-
-        if (existing) {
-          await supabase
-            .from('cart_items')
-            .update({ quantity: existing.quantity + 1 })
-            .eq('id', existing.id);
-        } else {
-          await supabase
-            .from('cart_items')
-            .insert({
-              user_id: user.id,
-              product_id: product.id,
-              shop_id: product.shop_id,
-              quantity: 1
-            });
-        }
-      } else {
-        // Guest user: save to localStorage
-        const CART_KEY = 'guest_cart';
-        const cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
-        const existingIndex = cart.findIndex((item: any) => item.product_id === product.id);
-        
-        if (existingIndex >= 0) {
-          cart[existingIndex].quantity += 1;
-        } else {
-          cart.push({
-            product_id: product.id,
-            shop_id: product.shop_id,
-            quantity: 1,
-            product: {
-              id: product.id,
-              name: product.name,
-              price: product.price,
-              image_url: product.image_url
-            },
-            shop: product.shop ? {
-              id: product.shop.id,
-              name: product.shop.name
-            } : null
-          });
-        }
-        localStorage.setItem(CART_KEY, JSON.stringify(cart));
-      }
-      
-      if (redirect) {
-        navigate('/checkout');
-      } else {
-        toast.success('Added to cart!');
-      }
-    } catch (error) {
-      console.error('Error adding to cart:', error);
-      toast.error('Failed to add to cart');
-    }
+  const handleBuyNow = async (e: React.MouseEvent, product: any) => {
+    e.stopPropagation();
+    await addToCart(product, false);
+    navigate('/checkout');
   };
 
   // Group shops by category
@@ -188,17 +125,47 @@ export const SearchResults = ({ shops, products = [], searchQuery }: SearchResul
                         )}
                       </div>
                       <div className="grid grid-cols-2 gap-2">
+                        {(() => {
+                          const cartItem = cartItems.find(item => item.product_id === product.id);
+                          const quantity = cartItem ? cartItem.quantity : 0;
+                          
+                          return quantity > 0 ? (
+                            <div className="flex items-center justify-between border rounded-md px-2" onClick={(e) => e.stopPropagation()}>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-6 w-6"
+                                onClick={() => updateQuantity(product.id, quantity - 1, true)}
+                              >
+                                <Minus className="h-3 w-3" />
+                              </Button>
+                              <span className="font-semibold text-sm">{quantity}</span>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-6 w-6"
+                                onClick={() => updateQuantity(product.id, quantity + 1, true)}
+                              >
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button 
+                              variant="outline"
+                              className="w-full text-xs sm:text-sm" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                addToCart(product);
+                              }}
+                              disabled={!product.in_stock}
+                            >
+                              {product.in_stock ? 'Add to Cart' : 'Out of Stock'}
+                            </Button>
+                          );
+                        })()}
                         <Button 
-                          variant="outline"
                           className="w-full text-xs sm:text-sm" 
-                          onClick={(e) => handleAddToCart(e, product, false)}
-                          disabled={!product.in_stock}
-                        >
-                          {product.in_stock ? 'Add to Cart' : 'Out of Stock'}
-                        </Button>
-                        <Button 
-                          className="w-full text-xs sm:text-sm" 
-                          onClick={(e) => handleAddToCart(e, product, true)}
+                          onClick={(e) => handleBuyNow(e, product)}
                           disabled={!product.in_stock}
                         >
                           Buy Now

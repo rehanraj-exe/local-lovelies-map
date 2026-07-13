@@ -10,8 +10,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { ArrowLeft, Star, MapPin, Phone, Clock, Share2, Heart, Briefcase, Navigation, X, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, Star, MapPin, Phone, Clock, Share2, Heart, Briefcase, Navigation, X, ShoppingCart, Plus, Minus } from 'lucide-react';
 import { getProductImage } from '@/lib/utils';
+import { useCart } from '@/contexts/CartContext';
 
 interface Shop {
   id: string;
@@ -79,72 +80,12 @@ const ShopProfile = () => {
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [shopOwnerPlan, setShopOwnerPlan] = useState<string>('free');
 
-  const handleAddToCart = async (product: any, redirect: boolean = false) => {
-    if (!shop) return;
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        // Logged-in user: save to database
-        const { data: existing } = await supabase
-          .from('cart_items')
-          .select('id, quantity')
-          .eq('user_id', user.id)
-          .eq('product_id', product.id)
-          .single();
+  const { cartItems, addToCart, updateQuantity } = useCart();
 
-        if (existing) {
-          await supabase
-            .from('cart_items')
-            .update({ quantity: existing.quantity + 1 })
-            .eq('id', existing.id);
-        } else {
-          await supabase
-            .from('cart_items')
-            .insert({
-              user_id: user.id,
-              product_id: product.id,
-              shop_id: shop.id,
-              quantity: 1
-            });
-        }
-      } else {
-        // Guest user: save to localStorage
-        const CART_KEY = 'guest_cart';
-        const cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
-        const existingIndex = cart.findIndex((item: any) => item.product_id === product.id);
-        
-        if (existingIndex >= 0) {
-          cart[existingIndex].quantity += 1;
-        } else {
-          cart.push({
-            product_id: product.id,
-            shop_id: shop.id,
-            quantity: 1,
-            product: {
-              id: product.id,
-              name: product.name,
-              price: product.price,
-              image_url: product.image_url
-            },
-            shop: {
-              id: shop.id,
-              name: shop.name
-            }
-          });
-        }
-        localStorage.setItem(CART_KEY, JSON.stringify(cart));
-      }
-      
-      if (redirect) {
-        navigate('/checkout');
-      } else {
-        toast.success('Added to cart!');
-      }
-    } catch (error) {
-      console.error('Error adding to cart:', error);
-      toast.error('Failed to add to cart');
-    }
+  const handleBuyNow = async (product: any) => {
+    if (!shop) return;
+    await addToCart({ ...product, shop });
+    navigate('/checkout');
   };
 
   useEffect(() => {
@@ -599,17 +540,44 @@ const ShopProfile = () => {
                             )}
                           </div>
                           <div className="grid grid-cols-2 gap-2">
+                            {(() => {
+                              const cartItem = cartItems.find(item => item.product_id === product.id);
+                              const quantity = cartItem ? cartItem.quantity : 0;
+                              
+                              return quantity > 0 ? (
+                                <div className="flex items-center justify-between border rounded-md px-2" onClick={(e) => e.stopPropagation()}>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-6 w-6"
+                                    onClick={() => updateQuantity(product.id, quantity - 1, true)}
+                                  >
+                                    <Minus className="h-3 w-3" />
+                                  </Button>
+                                  <span className="font-semibold text-sm">{quantity}</span>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-6 w-6"
+                                    onClick={() => updateQuantity(product.id, quantity + 1, true)}
+                                  >
+                                    <Plus className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <Button 
+                                  variant="outline"
+                                  className="w-full" 
+                                  onClick={() => addToCart({ ...product, shop })}
+                                  disabled={!product.in_stock}
+                                >
+                                  {product.in_stock ? 'Add to Cart' : 'Out of Stock'}
+                                </Button>
+                              );
+                            })()}
                             <Button 
-                              variant="outline"
                               className="w-full" 
-                              onClick={() => handleAddToCart(product, false)}
-                              disabled={!product.in_stock}
-                            >
-                              {product.in_stock ? 'Add to Cart' : 'Out of Stock'}
-                            </Button>
-                            <Button 
-                              className="w-full" 
-                              onClick={() => handleAddToCart(product, true)}
+                              onClick={() => handleBuyNow(product)}
                               disabled={!product.in_stock}
                             >
                               Buy Now
