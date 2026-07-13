@@ -1,7 +1,10 @@
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Star, MapPin, Clock, Phone, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface Shop {
   id: string;
@@ -31,6 +34,75 @@ interface SearchResultsProps {
 
 export const SearchResults = ({ shops, products = [], searchQuery }: SearchResultsProps) => {
   const navigate = useNavigate();
+
+  const handleAddToCart = async (e: React.MouseEvent, product: any, redirect: boolean = false) => {
+    e.stopPropagation(); // Prevent navigating to shop profile
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        // Logged-in user: save to database
+        const { data: existing } = await supabase
+          .from('cart_items')
+          .select('id, quantity')
+          .eq('user_id', user.id)
+          .eq('product_id', product.id)
+          .single();
+
+        if (existing) {
+          await supabase
+            .from('cart_items')
+            .update({ quantity: existing.quantity + 1 })
+            .eq('id', existing.id);
+        } else {
+          await supabase
+            .from('cart_items')
+            .insert({
+              user_id: user.id,
+              product_id: product.id,
+              shop_id: product.shop_id,
+              quantity: 1
+            });
+        }
+      } else {
+        // Guest user: save to localStorage
+        const CART_KEY = 'guest_cart';
+        const cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+        const existingIndex = cart.findIndex((item: any) => item.product_id === product.id);
+        
+        if (existingIndex >= 0) {
+          cart[existingIndex].quantity += 1;
+        } else {
+          cart.push({
+            product_id: product.id,
+            shop_id: product.shop_id,
+            quantity: 1,
+            product: {
+              id: product.id,
+              name: product.name,
+              price: product.price,
+              image_url: product.image_url
+            },
+            shop: product.shop ? {
+              id: product.shop.id,
+              name: product.shop.name
+            } : null
+          });
+        }
+        localStorage.setItem(CART_KEY, JSON.stringify(cart));
+      }
+      
+      if (redirect) {
+        navigate('/checkout');
+      } else {
+        toast.success('Added to cart!');
+      }
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      toast.error('Failed to add to cart');
+    }
+  };
 
   // Group shops by category
   const shopsByCategory = shops.reduce((acc, shop) => {
@@ -206,11 +278,28 @@ export const SearchResults = ({ shops, products = [], searchQuery }: SearchResul
                   {product.description && (
                     <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{product.description}</p>
                   )}
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-4">
                     <span className="text-lg font-bold text-primary">₹{product.price}</span>
                     {product.featured && (
                       <Badge variant="default">Featured</Badge>
                     )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button 
+                      variant="outline"
+                      className="w-full text-xs sm:text-sm" 
+                      onClick={(e) => handleAddToCart(e, product, false)}
+                      disabled={!product.in_stock}
+                    >
+                      {product.in_stock ? 'Add to Cart' : 'Out of Stock'}
+                    </Button>
+                    <Button 
+                      className="w-full text-xs sm:text-sm" 
+                      onClick={(e) => handleAddToCart(e, product, true)}
+                      disabled={!product.in_stock}
+                    >
+                      Buy Now
+                    </Button>
                   </div>
                 </div>
               </Card>
