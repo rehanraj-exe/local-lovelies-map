@@ -126,13 +126,10 @@ export const SearchResults = ({ shops, products = [], searchQuery }: SearchResul
         </p>
       </div>
 
-      <Tabs defaultValue="shops" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="shops">Shops ({totalShopResults})</TabsTrigger>
-          <TabsTrigger value="products">Products ({totalProductResults})</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="shops" className="space-y-6">
+      <div className="space-y-12 w-full mt-6">
+        {totalShopResults > 0 && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold tracking-tight">Shops ({totalShopResults})</h2>
           {/* Results by Category */}
           {Object.entries(shopsByCategory).map(([category, categoryShops]) => (
             <div key={category} className="space-y-4">
@@ -233,11 +230,10 @@ export const SearchResults = ({ shops, products = [], searchQuery }: SearchResul
             </div>
           ))}
 
-          {/* No Results */}
           {totalShopResults === 0 && (
-            <div className="text-center py-12">
+            <div className="text-center py-12 border rounded-xl border-dashed">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
-                <Sparkles className="w-8 h-8 text-muted-foreground" />
+                <Store className="w-8 h-8 text-muted-foreground" />
               </div>
               <h3 className="text-lg font-semibold mb-2">No shops found</h3>
               <p className="text-muted-foreground">
@@ -245,9 +241,12 @@ export const SearchResults = ({ shops, products = [], searchQuery }: SearchResul
               </p>
             </div>
           )}
-        </TabsContent>
+          </div>
+        )}
 
-        <TabsContent value="products">
+        {totalProductResults > 0 && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold tracking-tight">Products ({totalProductResults})</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {products.map((product, index) => (
               <Card 
@@ -306,11 +305,10 @@ export const SearchResults = ({ shops, products = [], searchQuery }: SearchResul
             ))}
           </div>
 
-          {/* No Results */}
           {totalProductResults === 0 && (
-            <div className="text-center py-12">
+            <div className="text-center py-12 border rounded-xl border-dashed">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
-                <Sparkles className="w-8 h-8 text-muted-foreground" />
+                <Package className="w-8 h-8 text-muted-foreground" />
               </div>
               <h3 className="text-lg font-semibold mb-2">No products found</h3>
               <p className="text-muted-foreground">
@@ -318,8 +316,9 @@ export const SearchResults = ({ shops, products = [], searchQuery }: SearchResul
               </p>
             </div>
           )}
-        </TabsContent>
-      </Tabs>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

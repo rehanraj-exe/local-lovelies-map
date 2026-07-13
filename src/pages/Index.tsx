@@ -206,8 +206,15 @@ const Index = () => {
   // Generate dynamic search suggestions
   const searchSuggestions = useMemo(() => {
     if (!searchQuery.trim() || isSmartMode) return [];
-    return shopFuse.search(searchQuery).slice(0, 5).map(result => result.item);
-  }, [searchQuery, shopFuse, isSmartMode]);
+    
+    const shopResults = shopFuse.search(searchQuery).map(result => ({ item: result.item, type: 'shop', score: result.score }));
+    const productResults = productFuse.search(searchQuery).map(result => ({ item: result.item, type: 'product', score: result.score }));
+    
+    // Combine, sort by score, and take top 8
+    return [...shopResults, ...productResults]
+      .sort((a, b) => (a.score || 0) - (b.score || 0))
+      .slice(0, 8);
+  }, [searchQuery, shopFuse, productFuse, isSmartMode]);
 
   // Filter shops based on category, search, and open status with fuzzy matching or AI smart search
   const filteredShops = useMemo(() => {
@@ -296,25 +303,31 @@ const Index = () => {
                 {/* Search Suggestions Dropdown */}
                 {showSuggestions && searchSuggestions.length > 0 && !isSmartMode && (
                   <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg overflow-hidden z-50 animate-fade-in">
-                    {searchSuggestions.map((shop, idx) => (
-                      <div
-                        key={shop.id}
-                        className={`px-4 py-3 cursor-pointer hover:bg-muted transition-colors flex items-center gap-3 ${idx !== searchSuggestions.length - 1 ? 'border-b border-border/50' : ''}`}
-                        onClick={() => {
-                          setSearchQuery(shop.name);
-                          setShowSuggestions(false);
-                          navigate(`/shop/${shop.id}`);
-                        }}
-                      >
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                          <Store className="w-4 h-4 text-primary" />
+                    {searchSuggestions.map((suggestion, idx) => {
+                      const isShop = suggestion.type === 'shop';
+                      const item = suggestion.item;
+                      return (
+                        <div
+                          key={`${suggestion.type}-${item.id}`}
+                          className={`px-4 py-3 cursor-pointer hover:bg-muted transition-colors flex items-center gap-3 ${idx !== searchSuggestions.length - 1 ? 'border-b border-border/50' : ''}`}
+                          onClick={() => {
+                            setSearchQuery(item.name);
+                            setShowSuggestions(false);
+                            navigate(isShop ? `/shop/${item.id}` : `/shop/${item.shop_id || item.shop?.id}`);
+                          }}
+                        >
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isShop ? 'bg-primary/10' : 'bg-blue-500/10'}`}>
+                            {isShop ? <Store className="w-4 h-4 text-primary" /> : <Package className="w-4 h-4 text-blue-500" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{item.name}</p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {isShop ? `${item.category} • ${item.address}` : `Product • ${(item.shop?.name || 'Unknown Shop')}`}
+                            </p>
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{shop.name}</p>
-                          <p className="text-xs text-muted-foreground truncate">{shop.category} • {shop.address}</p>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
