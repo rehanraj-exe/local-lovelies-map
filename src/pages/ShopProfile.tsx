@@ -174,7 +174,7 @@ const ShopProfile = () => {
             .select('*')
             .eq('shop_id', id)
             .eq('in_stock', true)
-            .limit(6),
+            .order('created_at', { ascending: false }),
           
           // Fetch active offers
           supabase
