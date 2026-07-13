@@ -164,6 +164,7 @@ const Index = () => {
         supabase
           .from('products')
           .select('*, shop:shops(id, name)')
+          .order('created_at', { ascending: false })
       ]);
 
       if (shopsError) console.error('Error fetching shops:', shopsError);
