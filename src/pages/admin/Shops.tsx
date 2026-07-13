@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Edit, Trash2 } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Store } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const Shops = () => {
@@ -79,6 +79,7 @@ export const Shops = () => {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-16">Image</TableHead>
               <TableHead>Shop Name</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>City</TableHead>
@@ -89,15 +90,28 @@ export const Shops = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-10">Loading...</TableCell>
+                <TableCell colSpan={6} className="text-center py-10">Loading...</TableCell>
               </TableRow>
             ) : filteredShops.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">No shops found</TableCell>
+                <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">No shops found</TableCell>
               </TableRow>
             ) : (
               filteredShops.map((shop) => (
                 <TableRow key={shop.id}>
+                  <TableCell>
+                    <div className="w-10 h-10 rounded-md overflow-hidden bg-muted flex items-center justify-center">
+                      {(shop.logo_url || (shop.photos && shop.photos[0])) ? (
+                        <img 
+                          src={shop.logo_url || shop.photos[0]} 
+                          alt={shop.name} 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Store className="w-5 h-5 text-muted-foreground" />
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell className="font-medium">{shop.name}</TableCell>
                   <TableCell>{shop.category}</TableCell>
                   <TableCell>{shop.city || '-'}</TableCell>

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Edit, Trash2 } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Package } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const Products = () => {
@@ -79,6 +79,7 @@ export const Products = () => {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-16">Image</TableHead>
               <TableHead>Product Name</TableHead>
               <TableHead>Shop</TableHead>
               <TableHead>Price</TableHead>
@@ -90,15 +91,28 @@ export const Products = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-10">Loading...</TableCell>
+                <TableCell colSpan={7} className="text-center py-10">Loading...</TableCell>
               </TableRow>
             ) : filteredProducts.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">No products found</TableCell>
+                <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">No products found</TableCell>
               </TableRow>
             ) : (
               filteredProducts.map((product) => (
                 <TableRow key={product.id}>
+                  <TableCell>
+                    <div className="w-10 h-10 rounded-md overflow-hidden bg-muted flex items-center justify-center">
+                      {(product.image_url || (product.images && product.images[0])) ? (
+                        <img 
+                          src={product.image_url || product.images[0]} 
+                          alt={product.name} 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Package className="w-5 h-5 text-muted-foreground" />
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell className="font-medium">{product.name}</TableCell>
                   <TableCell>{product.shop?.name || '-'}</TableCell>
                   <TableCell>₹{product.price}</TableCell>
