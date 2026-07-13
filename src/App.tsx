@@ -23,6 +23,12 @@ import MapPage from "./pages/MapPage";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { CartProvider } from "@/contexts/CartContext";
+import { AdminLayout } from "@/components/admin/AdminLayout";
+import AdminDashboard from "@/pages/admin/Dashboard";
+import AdminShops from "@/pages/admin/Shops";
+import AdminShopEditor from "@/pages/admin/ShopEditor";
+import AdminProducts from "@/pages/admin/Products";
+import AdminProductEditor from "@/pages/admin/ProductEditor";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +56,17 @@ const App = () => (
               <Route path="/premium" element={<Premium />} />
               <Route path="/delivery-addresses" element={<DeliveryAddresses />} />
               <Route path="/map" element={<MapPage />} />
+              
+              {/* ADMIN ROUTES */}
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="shops" element={<AdminShops />} />
+                <Route path="shops/new" element={<AdminShopEditor />} />
+                <Route path="shops/:id" element={<AdminShopEditor />} />
+                <Route path="products" element={<AdminProducts />} />
+                <Route path="products/new" element={<AdminProductEditor />} />
+                <Route path="products/:id" element={<AdminProductEditor />} />
+              </Route>
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
