@@ -191,7 +191,7 @@ const Index = () => {
   const shopFuse = useMemo(() => {
     return new Fuse(shops, {
       keys: ['name', 'category', 'subcategory', 'address', 'description'],
-      threshold: 0.4,
+      threshold: 0.3,
       includeScore: true,
     });
   }, [shops]);
@@ -236,9 +236,9 @@ const Index = () => {
           .filter(shop => shop.id in aiMatches)
           .sort((a, b) => (aiMatches[b.id]?.score || 0) - (aiMatches[a.id]?.score || 0));
       } else {
-        // Fallback to standard fuzzy search
+        // Fallback to standard fuzzy search (only strong matches)
         const fuseResults = shopFuse.search(searchQuery);
-        results = fuseResults.map(result => result.item);
+        results = fuseResults.filter(r => (r.score || 1) < 0.25).map(result => result.item);
       }
     }
 
