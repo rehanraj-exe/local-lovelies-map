@@ -236,9 +236,14 @@ const Index = () => {
           .filter(shop => shop.id in aiMatches)
           .sort((a, b) => (aiMatches[b.id]?.score || 0) - (aiMatches[a.id]?.score || 0));
       } else {
-        // Fallback to standard fuzzy search (only strong matches)
-        const fuseResults = shopFuse.search(searchQuery);
-        results = fuseResults.filter(r => (r.score || 1) < 0.25).map(result => result.item);
+        // Fallback to strict substring search
+        const query = searchQuery.toLowerCase();
+        results = results.filter(shop => 
+          shop.name?.toLowerCase().includes(query) ||
+          shop.category?.toLowerCase().includes(query) ||
+          shop.description?.toLowerCase().includes(query) ||
+          shop.subcategory?.toLowerCase().includes(query)
+        );
       }
     }
 
@@ -279,13 +284,16 @@ const Index = () => {
     }
 
     // Secondary: add direct product name/description matches (not already included)
-    const fuseResults = productFuse.search(searchQuery);
-    for (const result of fuseResults) {
-      if (!resultIds.has(result.item.id)) {
-        // Only add if the match score is very strong (< 0.2) to avoid loose matches
-        if ((result.score || 1) < 0.2) {
-          resultIds.add(result.item.id);
-          combined.push(result.item);
+    const query = searchQuery.toLowerCase();
+    for (const product of validProducts) {
+      if (!resultIds.has(product.id)) {
+        if (
+          product.name?.toLowerCase().includes(query) ||
+          product.category?.toLowerCase().includes(query) ||
+          product.description?.toLowerCase().includes(query)
+        ) {
+          resultIds.add(product.id);
+          combined.push(product);
         }
       }
     }
