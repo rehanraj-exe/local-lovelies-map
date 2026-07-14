@@ -299,14 +299,38 @@ const Index = () => {
     }
 
     // Apply category filter if one is selected
+    let finalResults = combined;
     if (selectedCategory !== 'All') {
-      return combined.filter(product => {
+      finalResults = finalResults.filter(product => {
         const shop = shops.find(s => s.id === product.shop_id);
         return shop?.category === selectedCategory;
       });
     }
 
-    return combined;
+    // Interleave products by shop to ensure variety (avoiding clusters of the same product)
+    const groupedByShop = new Map<string, typeof validProducts>();
+    for (const p of finalResults) {
+      if (!groupedByShop.has(p.shop_id)) {
+        groupedByShop.set(p.shop_id, []);
+      }
+      groupedByShop.get(p.shop_id)!.push(p);
+    }
+
+    const interleaved: typeof validProducts = [];
+    let hasMore = true;
+    let index = 0;
+    while (hasMore) {
+      hasMore = false;
+      for (const shopProducts of groupedByShop.values()) {
+        if (index < shopProducts.length) {
+          interleaved.push(shopProducts[index]);
+          hasMore = true;
+        }
+      }
+      index++;
+    }
+
+    return interleaved;
   }, [productFuse, searchQuery, isSmartMode, selectedCategory, shops, filteredShops, validProducts]);
 
   // Count active offers (you can fetch this from offers table later)
