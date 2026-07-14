@@ -48,12 +48,24 @@ const Index = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const [selectedShopId, setSelectedShopId] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [selectedCategory, setSelectedCategory] = useState<string>(() => sessionStorage.getItem('index_selectedCategory') || 'All');
   const [shops, setShops] = useState<Shop[]>([]);
   const [products, setProducts] = useState<any[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(() => sessionStorage.getItem('index_searchQuery') || '');
   const [isLoading, setIsLoading] = useState(true);
-  const [mapFilter, setMapFilter] = useState<'all' | 'deals' | 'new' | 'open' | 'closed'>('all');
+  const [mapFilter, setMapFilter] = useState<'all' | 'deals' | 'new' | 'open' | 'closed'>(() => (sessionStorage.getItem('index_mapFilter') as any) || 'all');
+
+  useEffect(() => {
+    sessionStorage.setItem('index_selectedCategory', selectedCategory);
+  }, [selectedCategory]);
+
+  useEffect(() => {
+    sessionStorage.setItem('index_searchQuery', searchQuery);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    sessionStorage.setItem('index_mapFilter', mapFilter);
+  }, [mapFilter]);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isVoiceOpen, setIsVoiceOpen] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);

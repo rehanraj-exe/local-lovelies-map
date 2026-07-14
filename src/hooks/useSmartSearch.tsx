@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -10,8 +10,23 @@ export interface AIMatch {
 
 export const useSmartSearch = () => {
   const [isSearching, setIsSearching] = useState(false);
-  const [aiMatches, setAiMatches] = useState<Record<string, { score: number; reason: string }>>({});
-  const [isSmartMode, setIsSmartMode] = useState(false);
+  const [aiMatches, setAiMatches] = useState<Record<string, { score: number; reason: string }>>(() => {
+    try {
+      const saved = sessionStorage.getItem('smartSearch_aiMatches');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+  const [isSmartMode, setIsSmartMode] = useState(() => sessionStorage.getItem('smartSearch_isSmartMode') === 'true');
+
+  useEffect(() => {
+    sessionStorage.setItem('smartSearch_aiMatches', JSON.stringify(aiMatches));
+  }, [aiMatches]);
+
+  useEffect(() => {
+    sessionStorage.setItem('smartSearch_isSmartMode', String(isSmartMode));
+  }, [isSmartMode]);
 
   const performSmartSearch = async (query: string) => {
     if (!query || query.trim() === '') {
