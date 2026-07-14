@@ -308,7 +308,7 @@ const Index = () => {
     }
 
     // Interleave products by shop to ensure variety (avoiding clusters of the same product)
-    const groupedByShop = new Map<string, typeof validProducts>();
+    const groupedByShop = new globalThis.Map<string, typeof validProducts>();
     for (const p of finalResults) {
       if (!groupedByShop.has(p.shop_id)) {
         groupedByShop.set(p.shop_id, []);
