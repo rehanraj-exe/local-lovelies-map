@@ -261,30 +261,45 @@ const Index = () => {
 
   const filteredProducts = useMemo(() => {
     if (!searchQuery.trim() || isSmartMode) return [];
-    const fuseResults = productFuse.search(searchQuery);
-    let results = fuseResults.map(result => result.item);
 
-    // Filter products by selected category if one is chosen
+    // Strategy: Show products from shops that matched the search (primary),
+    // supplemented by products whose name/description directly matched (secondary).
+    // This ensures searching "food" shows food products, not random fuzzy matches.
+
+    const matchedShopIds = new Set(filteredShops.map(s => s.id));
+    const resultIds = new Set<string>();
+    const combined: typeof validProducts = [];
+
+    // Primary: all products from shops that matched the search
+    for (const product of validProducts) {
+      if (matchedShopIds.has(product.shop_id) && !resultIds.has(product.id)) {
+        resultIds.add(product.id);
+        combined.push(product);
+      }
+    }
+
+    // Secondary: add direct product name/description matches (not already included)
+    const fuseResults = productFuse.search(searchQuery);
+    for (const result of fuseResults) {
+      if (!resultIds.has(result.item.id)) {
+        // Only add if the match score is very strong (< 0.2) to avoid loose matches
+        if ((result.score || 1) < 0.2) {
+          resultIds.add(result.item.id);
+          combined.push(result.item);
+        }
+      }
+    }
+
+    // Apply category filter if one is selected
     if (selectedCategory !== 'All') {
-      results = results.filter(product => {
+      return combined.filter(product => {
         const shop = shops.find(s => s.id === product.shop_id);
         return shop?.category === selectedCategory;
       });
     }
 
-    // Also filter to only show products from shops that matched the search,
-    // so we don't show random fuzzy-matched products from unrelated shops
-    const matchedShopIds = new Set(filteredShops.map(s => s.id));
-    if (matchedShopIds.size > 0) {
-      const shopFilteredResults = results.filter(p => matchedShopIds.has(p.shop_id));
-      // Only apply shop filter if it doesn't eliminate everything
-      if (shopFilteredResults.length > 0) {
-        results = shopFilteredResults;
-      }
-    }
-
-    return results;
-  }, [productFuse, searchQuery, isSmartMode, selectedCategory, shops, filteredShops]);
+    return combined;
+  }, [productFuse, searchQuery, isSmartMode, selectedCategory, shops, filteredShops, validProducts]);
 
   // Count active offers (you can fetch this from offers table later)
   const activeOffers = 0; // Placeholder for now
