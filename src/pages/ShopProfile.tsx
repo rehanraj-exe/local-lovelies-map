@@ -348,7 +348,13 @@ const ShopProfile = () => {
           variant="secondary"
           size="icon"
           className="absolute top-6 left-6 rounded-full shadow-medium hover:shadow-glow transition-all hover:scale-110"
-          onClick={() => navigate('/')}
+          onClick={() => {
+            if (window.history.length > 2) {
+              navigate(-1);
+            } else {
+              navigate('/');
+            }
+          }}
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>
@@ -454,9 +460,12 @@ const ShopProfile = () => {
           </div>
 
           {/* Tabs */}
-          <Tabs defaultValue="offers" className="mt-6">
-            <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent">
-              <TabsTrigger value="offers" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
+          <Tabs defaultValue="products" className="mt-6">
+            <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent overflow-x-auto flex-nowrap">
+              <TabsTrigger value="products" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary whitespace-nowrap">
+                Products
+              </TabsTrigger>
+              <TabsTrigger value="offers" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary whitespace-nowrap">
                 Offers
               </TabsTrigger>
               <TabsTrigger value="jobs" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
@@ -511,7 +520,9 @@ const ShopProfile = () => {
                   <p className="text-sm text-muted-foreground mt-2">Check back soon for great deals!</p>
                 </div>
               )}
+            </TabsContent>
 
+            <TabsContent value="products" className="mt-6">
               {/* Products Section */}
               {products.length > 0 ? (
                 <div className="mt-8 pt-8 border-t border-border">
