@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Fuse from 'fuse.js';
+import { useQuery } from '@tanstack/react-query';
 import MapView from '@/components/MapView';
 import ShopQuickView from '@/components/ShopQuickView';
 import TopLocalPicks from '@/components/TopLocalPicks';
@@ -49,10 +50,26 @@ const Index = () => {
   const { user, signOut } = useAuth();
   const [selectedShopId, setSelectedShopId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>(() => sessionStorage.getItem('index_selectedCategory') || 'All');
-  const [shops, setShops] = useState<Shop[]>([]);
-  const [products, setProducts] = useState<any[]>([]);
+  const { data: shops = [], isLoading: isLoadingShops } = useQuery({
+    queryKey: ['shops', 'verified'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('shops').select('*').eq('verified', true);
+      if (error) throw error;
+      return data as Shop[];
+    }
+  });
+
+  const { data: products = [], isLoading: isLoadingProducts } = useQuery({
+    queryKey: ['products', 'all'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('products').select('*, shop:shops(id, name)').order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  const isLoading = isLoadingShops || isLoadingProducts;
   const [searchQuery, setSearchQuery] = useState(() => sessionStorage.getItem('index_searchQuery') || '');
-  const [isLoading, setIsLoading] = useState(true);
   const [mapFilter, setMapFilter] = useState<'all' | 'deals' | 'new' | 'open' | 'closed'>(() => (sessionStorage.getItem('index_mapFilter') as any) || 'all');
 
   useEffect(() => {
@@ -161,35 +178,7 @@ const Index = () => {
     }
   };
 
-  // Fetch shops and products from database
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      const [
-        { data: shopsData, error: shopsError },
-        { data: productsData, error: productsError }
-      ] = await Promise.all([
-        supabase
-          .from('shops')
-          .select('*')
-          .eq('verified', true),
-        supabase
-          .from('products')
-          .select('*, shop:shops(id, name)')
-          .order('created_at', { ascending: false })
-      ]);
 
-      if (shopsError) console.error('Error fetching shops:', shopsError);
-      else setShops(shopsData || []);
-
-      if (productsError) console.error('Error fetching products:', productsError);
-      else setProducts(productsData || []);
-      
-      setIsLoading(false);
-    };
-
-    fetchData();
-  }, []);
 
   const selectedShop = selectedShopId
     ? shops.find((shop) => shop.id === selectedShopId)
@@ -207,14 +196,20 @@ const Index = () => {
     });
   }, [shops]);
 
+  // Filter out products that are out of stock or belong to unverified/deleted shops
+  const validProducts = useMemo(() => {
+    const validShopIds = new Set(shops.map(shop => shop.id));
+    return products.filter(product => product.in_stock && validShopIds.has(product.shop_id));
+  }, [products, shops]);
+
   // Configure fuzzy search for products
   const productFuse = useMemo(() => {
-    return new Fuse(products, {
+    return new Fuse(validProducts, {
       keys: ['name', 'description'],
       threshold: 0.4,
       includeScore: true,
     });
-  }, [products]);
+  }, [validProducts]);
 
   // Generate dynamic search suggestions
   const searchSuggestions = useMemo(() => {
