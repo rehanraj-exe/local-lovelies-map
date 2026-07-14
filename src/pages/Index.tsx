@@ -11,7 +11,6 @@ import Footer from '@/components/Footer';
 import { SearchResults } from '@/components/SearchResults';
 import { Cart } from '@/components/Cart';
 import { ScrollAnimate } from '@/components/ScrollAnimate';
-import { Interactive3DCanvas } from '@/components/Interactive3DCanvas';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -405,8 +404,7 @@ const Index = () => {
   const activeOffers = 0; // Placeholder for now
 
   return (
-    <div className="min-h-screen bg-transparent animate-fade-in">
-      <Interactive3DCanvas />
+    <div className="min-h-screen bg-background animate-fade-in">
       {/* Hero Section */}
       <div className="relative h-64 overflow-hidden">
         <img
