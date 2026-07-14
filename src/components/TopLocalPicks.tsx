@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Star, MapPin, Sparkles, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { ScrollAnimate } from './ScrollAnimate';
 
 interface TopLocalPicksProps {
   category?: string;
@@ -140,49 +141,50 @@ const TopLocalPicks = ({ category = 'All', searchQuery = '' }: TopLocalPicksProp
             No recommendations available at the moment
           </p>
         ) : (
-          topShops.map((shop) => (
-          <Card
-            key={shop.id}
-            className="overflow-hidden cursor-pointer hover:shadow-glow transition-all hover:-translate-y-1"
-            onClick={() => navigate(`/shop/${shop.id}`)}
-          >
-            <div className="relative h-40">
-              <img
-                src={shop.photos?.[0] || '/placeholder.svg'}
-                alt={shop.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            
-            <div className="p-4 space-y-2">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-semibold">{shop.name}</h3>
-                  <p className="text-xs text-muted-foreground">{shop.category}</p>
+          topShops.map((shop, index) => (
+            <ScrollAnimate key={shop.id} delay={index * 100} className="h-full">
+              <Card
+                className="overflow-hidden cursor-pointer hover:shadow-glow transition-all hover:-translate-y-1 h-full border border-border/80"
+                onClick={() => navigate(`/shop/${shop.id}`)}
+              >
+                <div className="relative h-40">
+                  <img
+                    src={shop.photos?.[0] || '/placeholder.svg'}
+                    alt={shop.name}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
-                <div className="flex items-center gap-1 text-sm">
-                  <Star className="w-4 h-4 fill-warning text-warning" />
-                  <span className="font-medium">{shop.rating}</span>
+                
+                <div className="p-4 space-y-2">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-semibold">{shop.name}</h3>
+                      <p className="text-xs text-muted-foreground">{shop.category}</p>
+                    </div>
+                    <div className="flex items-center gap-1 text-sm">
+                      <Star className="w-4 h-4 fill-warning text-warning" />
+                      <span className="font-medium">{shop.rating}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <MapPin className="w-3 h-3" />
+                    <span>{shop.address}</span>
+                  </div>
+
+                  <div className="flex items-center gap-1 text-xs font-medium text-primary mt-1">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>{shop.hours?.monday?.open || '9:00 AM'} - {shop.hours?.monday?.close || '9:00 PM'}</span>
+                  </div>
+
+                  {shop.verified && (
+                    <Badge variant="outline" className="text-xs">
+                      ✓ Verified
+                    </Badge>
+                  )}
                 </div>
-              </div>
-              
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <MapPin className="w-3 h-3" />
-                <span>{shop.address}</span>
-              </div>
-
-              <div className="flex items-center gap-1 text-xs font-medium text-primary mt-1">
-                <Clock className="w-3.5 h-3.5" />
-                <span>{shop.hours?.monday?.open || '9:00 AM'} - {shop.hours?.monday?.close || '9:00 PM'}</span>
-              </div>
-
-              {shop.verified && (
-                <Badge variant="outline" className="text-xs">
-                  ✓ Verified
-                </Badge>
-              )}
-            </div>
-          </Card>
+              </Card>
+            </ScrollAnimate>
           ))
         )}
       </div>

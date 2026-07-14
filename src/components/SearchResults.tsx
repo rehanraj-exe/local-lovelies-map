@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Star, MapPin, Clock, Phone, Sparkles, Store, Package, Plus, Minus, Tag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '@/contexts/CartContext';
+import { ScrollAnimate } from './ScrollAnimate';
 
 interface Shop {
   id: string;
@@ -137,12 +138,11 @@ export const SearchResults = ({
             {displayedProducts.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                 {displayedProducts.map((product, index) => (
-                  <Card 
-                    key={product.id} 
-                    className="overflow-hidden group cursor-pointer animate-slide-up"
-                    style={{ animationDelay: `${index * 50}ms` }}
-                    onClick={() => navigate(`/shop/${product.shop_id}`)}
-                  >
+                  <ScrollAnimate key={product.id} delay={(index % 3) * 100} className="h-full">
+                    <Card 
+                      className="overflow-hidden group cursor-pointer h-full border border-border/80 hover:border-primary/20 hover:shadow-glow transition-all duration-300"
+                      onClick={() => navigate(`/shop/${product.shop_id}`)}
+                    >
                     <div className="aspect-[4/3] relative overflow-hidden bg-muted">
                       <img
                         src={product.image_url}
@@ -234,6 +234,7 @@ export const SearchResults = ({
                       </div>
                     </div>
                   </Card>
+                  </ScrollAnimate>
                 ))}
               </div>
             ) : totalProductResults > 0 ? (
@@ -277,12 +278,11 @@ export const SearchResults = ({
 
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                       {categoryShops.map((shop, index) => (
-                        <Card
-                          key={shop.id}
-                          className="overflow-hidden cursor-pointer hover:shadow-glow transition-all duration-300 hover:scale-105 hover:-translate-y-1 animate-slide-up"
-                          style={{ animationDelay: `${index * 50}ms` }}
-                          onClick={() => navigate(`/shop/${shop.id}`)}
-                        >
+                        <ScrollAnimate key={shop.id} delay={(index % 3) * 100} className="h-full">
+                          <Card
+                            className="overflow-hidden cursor-pointer hover:shadow-glow transition-all duration-300 hover:scale-105 hover:-translate-y-1 h-full border border-border/80"
+                            onClick={() => navigate(`/shop/${shop.id}`)}
+                          >
                           {/* Shop Image */}
                           <div className="relative h-40 overflow-hidden">
                             <img
@@ -360,6 +360,7 @@ export const SearchResults = ({
                             </div>
                           </div>
                         </Card>
+                        </ScrollAnimate>
                       ))}
                     </div>
                   </div>

@@ -10,6 +10,7 @@ import { DiscountCarousel } from '@/components/DiscountCarousel';
 import Footer from '@/components/Footer';
 import { SearchResults } from '@/components/SearchResults';
 import { Cart } from '@/components/Cart';
+import { ScrollAnimate } from '@/components/ScrollAnimate';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -759,12 +760,11 @@ const Index = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredShops.map((shop, index) => (
-                <div
-                  key={shop.id}
-                  className="bg-card rounded-2xl overflow-hidden shadow-soft hover:shadow-glow transition-all duration-300 cursor-pointer border border-border hover:scale-105 hover:-translate-y-1 animate-slide-up"
-                  style={{ animationDelay: `${index * 50}ms` }}
-                  onClick={() => navigate(`/shop/${shop.id}`)}
-                >
+                <ScrollAnimate key={shop.id} delay={(index % 3) * 100} className="h-full">
+                  <div
+                    className="bg-card rounded-2xl overflow-hidden shadow-soft hover:shadow-glow transition-all duration-300 cursor-pointer border border-border hover:scale-105 hover:-translate-y-1 h-full"
+                    onClick={() => navigate(`/shop/${shop.id}`)}
+                  >
                   <div className="relative h-48 overflow-hidden">
                     <img
                       src={shop.photos?.[0] || '/placeholder.svg'}
@@ -812,6 +812,7 @@ const Index = () => {
                     )}
                   </div>
                 </div>
+                </ScrollAnimate>
               ))}
             </div>
           </div>
