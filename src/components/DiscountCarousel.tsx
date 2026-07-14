@@ -30,6 +30,14 @@ export const DiscountCarousel = () => {
     fetchOffers();
   }, []);
 
+  useEffect(() => {
+    if (offers.length <= 1) return;
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % offers.length);
+    }, 5000); // auto-move slowly every 5 seconds
+    return () => clearInterval(timer);
+  }, [offers]);
+
   const fetchOffers = async () => {
     const { data, error } = await supabase
       .from('offers')
