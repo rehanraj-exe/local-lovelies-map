@@ -239,10 +239,10 @@ const Index = () => {
         // Fallback to strict substring search
         const query = searchQuery.toLowerCase();
         results = results.filter(shop => 
-          shop.name?.toLowerCase().includes(query) ||
-          shop.category?.toLowerCase().includes(query) ||
-          shop.description?.toLowerCase().includes(query) ||
-          shop.subcategory?.toLowerCase().includes(query)
+          (shop.name?.toLowerCase() ?? '').includes(query) ||
+          (shop.category?.toLowerCase() ?? '').includes(query) ||
+          (shop.description?.toLowerCase() ?? '').includes(query) ||
+          (shop.subcategory?.toLowerCase() ?? '').includes(query)
         );
       }
     }
@@ -288,9 +288,9 @@ const Index = () => {
     for (const product of validProducts) {
       if (!resultIds.has(product.id)) {
         if (
-          product.name?.toLowerCase().includes(query) ||
-          product.category?.toLowerCase().includes(query) ||
-          product.description?.toLowerCase().includes(query)
+          (product.name?.toLowerCase() ?? '').includes(query) ||
+          (product.category?.toLowerCase() ?? '').includes(query) ||
+          (product.description?.toLowerCase() ?? '').includes(query)
         ) {
           resultIds.add(product.id);
           combined.push(product);
