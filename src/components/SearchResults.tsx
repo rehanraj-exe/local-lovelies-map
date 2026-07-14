@@ -154,14 +154,15 @@ export const SearchResults = ({
                           <Badge variant="destructive" className="text-lg">Out of Stock</Badge>
                         </div>
                       )}
-                      {product.shop && (
-                        <Badge variant="secondary" className="absolute top-3 right-3 shadow-md bg-background/90 backdrop-blur-sm">
-                          {product.shop.name}
-                        </Badge>
-                      )}
                     </div>
                     <div className="p-4">
-                      <h4 className="font-semibold mb-2">{product.name}</h4>
+                      {product.shop && (
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
+                          <Store className="w-3.5 h-3.5 text-primary/70 flex-shrink-0" />
+                          <span className="font-semibold truncate hover:text-primary transition-colors">{product.shop.name}</span>
+                        </div>
+                      )}
+                      <h4 className="font-semibold mb-2 group-hover:text-primary transition-colors">{product.name}</h4>
                       {product.description && (
                         <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{product.description}</p>
                       )}
