@@ -80,6 +80,11 @@ export const Interactive3DCanvas = () => {
     const render = () => {
       ctx.clearRect(0, 0, width, height);
 
+      // Detect dark theme dynamically
+      const isDark = document.documentElement.classList.contains('dark');
+      const opacityMultiplier = isDark ? 0.8 : 1.8;
+      const lineMultiplier = isDark ? 1.0 : 2.5;
+
       // Smooth mouse transition
       const mouse = mouseRef.current;
       mouse.x += (mouse.targetX - mouse.x) * 0.08;
@@ -122,7 +127,7 @@ export const Interactive3DCanvas = () => {
         if (projX >= 0 && projX <= width && projY >= 0 && projY <= height) {
           // Glow effect gradient
           const grad = ctx.createRadialGradient(projX, projY, 0, projX, projY, r * 3);
-          const opacity = scale * 0.7 * (1 - z2 / (fov * 2));
+          const opacity = Math.min(1.0, scale * 0.7 * (1 - z2 / (fov * 2)) * opacityMultiplier);
           grad.addColorStop(0, p.color + `${opacity})`);
           grad.addColorStop(0.3, p.color + `${opacity * 0.4})`);
           grad.addColorStop(1, p.color + '0)');
@@ -155,11 +160,13 @@ export const Interactive3DCanvas = () => {
           const dist = Math.sqrt(dx * dx + dy * dy);
 
           if (dist < 150) {
-            const opacity = (1 - dist / 150) * 0.15 * scaleI * scaleJ;
+            const opacity = Math.min(1.0, (1 - dist / 150) * 0.15 * scaleI * scaleJ * lineMultiplier);
             ctx.beginPath();
             ctx.moveTo(xi, yi);
             ctx.lineTo(xj, yj);
-            ctx.strokeStyle = `rgba(139, 92, 246, ${opacity})`;
+            ctx.strokeStyle = isDark 
+              ? `rgba(139, 92, 246, ${opacity})` 
+              : `rgba(99, 102, 241, ${opacity})`;
             ctx.lineWidth = 1;
             ctx.stroke();
           }
@@ -181,8 +188,8 @@ export const Interactive3DCanvas = () => {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 w-full h-full pointer-events-none z-0 bg-background/50 dark:bg-background/90"
-      style={{ mixBlendMode: 'screen' }}
+      className="fixed inset-0 w-full h-full pointer-events-none"
+      style={{ zIndex: -1 }}
     />
   );
 };

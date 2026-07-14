@@ -405,7 +405,7 @@ const Index = () => {
   const activeOffers = 0; // Placeholder for now
 
   return (
-    <div className="min-h-screen bg-background/95 animate-fade-in relative z-10">
+    <div className="min-h-screen bg-transparent animate-fade-in">
       <Interactive3DCanvas />
       {/* Hero Section */}
       <div className="relative h-64 overflow-hidden">
