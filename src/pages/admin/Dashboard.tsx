@@ -11,6 +11,7 @@ export const Dashboard = () => {
     outOfStockProducts: 0,
     totalUsers: 0,
     totalOrders: 0,
+    pendingShops: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -29,6 +30,7 @@ export const Dashboard = () => {
         { count: outOfStockProducts },
         { count: totalUsers },
         { count: totalOrders },
+        { count: pendingShops },
       ] = await Promise.all([
         supabase.from('shops').select('*', { count: 'exact', head: true }),
         supabase.from('shops').select('*', { count: 'exact', head: true }).eq('open_now', true),
@@ -36,6 +38,7 @@ export const Dashboard = () => {
         supabase.from('products').select('*', { count: 'exact', head: true }).eq('in_stock', false),
         supabase.from('profiles').select('*', { count: 'exact', head: true }),
         supabase.from('orders').select('*', { count: 'exact', head: true }),
+        supabase.from('shops').select('*', { count: 'exact', head: true }).eq('verified', false),
       ]);
 
       setStats({
@@ -45,6 +48,7 @@ export const Dashboard = () => {
         outOfStockProducts: outOfStockProducts || 0,
         totalUsers: totalUsers || 0,
         totalOrders: totalOrders || 0,
+        pendingShops: pendingShops || 0,
       });
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
@@ -63,6 +67,12 @@ export const Dashboard = () => {
       value: stats.totalShops,
       icon: Store,
       color: 'text-blue-500',
+    },
+    {
+      title: 'Pending Approvals',
+      value: stats.pendingShops,
+      icon: AlertCircle,
+      color: 'text-amber-500',
     },
     {
       title: 'Active Shops',

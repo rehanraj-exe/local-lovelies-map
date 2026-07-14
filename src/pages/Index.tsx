@@ -96,6 +96,8 @@ const Index = () => {
     isSearching: isAISearching,
     aiMatches,
     setAiMatches,
+    aiProductMatches,
+    setAiProductMatches,
     isSmartMode,
     setIsSmartMode,
     performSmartSearch,
@@ -124,6 +126,7 @@ const Index = () => {
 
   const handleSearchSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    setShowSuggestions(false);
     if (searchQuery.trim()) {
       if (isSmartMode) {
         await performSmartSearch(searchQuery);
@@ -265,35 +268,50 @@ const Index = () => {
   }, [shops, shopFuse, selectedCategory, searchQuery, mapFilter, isSmartMode, aiMatches]);
 
   const filteredProducts = useMemo(() => {
-    if (!searchQuery.trim() || isSmartMode) return [];
+    if (!searchQuery.trim()) return [];
 
-    // Strategy: Show products from shops that matched the search (primary),
-    // supplemented by products whose name/description directly matched (secondary).
-    // This ensures searching "food" shows food products, not random fuzzy matches.
+    if (isSmartMode) {
+      // Filter and sort by AI match score
+      return validProducts
+        .filter(product => product.id in aiProductMatches && product.in_stock)
+        .sort((a, b) => (aiProductMatches[b.id]?.score || 0) - (aiProductMatches[a.id]?.score || 0));
+    }
 
-    const matchedShopIds = new Set(filteredShops.map(s => s.id));
+    const query = searchQuery.toLowerCase();
     const resultIds = new Set<string>();
     const combined: typeof validProducts = [];
 
-    // Primary: all products from shops that matched the search
-    for (const product of validProducts) {
-      if (matchedShopIds.has(product.shop_id) && !resultIds.has(product.id)) {
-        resultIds.add(product.id);
-        combined.push(product);
-      }
-    }
+    const isGenericFallbackProduct = (name: string) => {
+      const lowercaseName = name.toLowerCase();
+      return (
+        lowercaseName.includes('gift card') ||
+        lowercaseName.includes('tote bag') ||
+        lowercaseName.includes('printed mug') ||
+        lowercaseName.includes('water bottle')
+      );
+    };
 
-    // Secondary: add direct product name/description matches (not already included)
-    const query = searchQuery.toLowerCase();
+    // Filter products: must directly match the search query (name, category, description)
+    // to prevent unrelated products from clashing. Generic fallback items must match directly by name/desc.
     for (const product of validProducts) {
       if (!resultIds.has(product.id)) {
-        if (
-          (product.name?.toLowerCase() ?? '').includes(query) ||
-          (product.category?.toLowerCase() ?? '').includes(query) ||
-          (product.description?.toLowerCase() ?? '').includes(query)
-        ) {
-          resultIds.add(product.id);
-          combined.push(product);
+        if (isGenericFallbackProduct(product.name)) {
+          if (
+            product.name.toLowerCase().includes(query) ||
+            (product.description?.toLowerCase() ?? '').includes(query)
+          ) {
+            resultIds.add(product.id);
+            combined.push(product);
+          }
+        } else {
+          if (
+            (product.name?.toLowerCase() ?? '').includes(query) ||
+            (product.category?.toLowerCase() ?? '').includes(query) ||
+            (product.description?.toLowerCase() ?? '').includes(query)
+          ) {
+            resultIds.add(product.id);
+            combined.push(product);
+          }
         }
       }
     }
@@ -307,31 +325,79 @@ const Index = () => {
       });
     }
 
-    // Interleave products by shop to ensure variety (avoiding clusters of the same product)
-    const groupedByShop = new globalThis.Map<string, typeof validProducts>();
-    for (const p of finalResults) {
-      if (!groupedByShop.has(p.shop_id)) {
-        groupedByShop.set(p.shop_id, []);
-      }
-      groupedByShop.get(p.shop_id)!.push(p);
-    }
-
+    // Diverse Interleaving Algorithm:
+    // We pick items one-by-one, maximizing diversity in name and shop compared to recent selections.
+    const remaining = [...finalResults];
     const interleaved: typeof validProducts = [];
-    let hasMore = true;
-    let index = 0;
-    while (hasMore) {
-      hasMore = false;
-      for (const shopProducts of groupedByShop.values()) {
-        if (index < shopProducts.length) {
-          interleaved.push(shopProducts[index]);
-          hasMore = true;
+
+    // Deterministic pseudo-random helper to disperse grouped items from the database seeds.
+    const getDeterministicScore = (id: string) => {
+      let hash = 0;
+      for (let j = 0; j < id.length; j++) {
+        hash = id.charCodeAt(j) + ((hash << 5) - hash);
+      }
+      return Math.abs(hash % 1000) / 1000;
+    };
+    
+    while (remaining.length > 0) {
+      let bestIndex = -1;
+      let bestScore = -Infinity;
+      
+      const lastProduct = interleaved[interleaved.length - 1];
+      const secondLastProduct = interleaved[interleaved.length - 2];
+      
+      for (let i = 0; i < remaining.length; i++) {
+        const candidate = remaining[i];
+        let score = 100;
+        
+        if (lastProduct) {
+          // Penalty for same shop as the immediate previous item
+          if (candidate.shop_id === lastProduct.shop_id) {
+            score -= 40;
+          }
+          // Penalty for same product name (case-insensitive) as immediate previous item
+          if (candidate.name.toLowerCase() === lastProduct.name.toLowerCase()) {
+            score -= 50;
+          }
+          // Penalty for same category as immediate previous item
+          if (candidate.category === lastProduct.category) {
+            score -= 10;
+          }
+        }
+        
+        if (secondLastProduct) {
+          // Penalty for same shop two items ago
+          if (candidate.shop_id === secondLastProduct.shop_id) {
+            score -= 10;
+          }
+          // Penalty for same product name two items ago
+          if (candidate.name.toLowerCase() === secondLastProduct.name.toLowerCase()) {
+            score -= 20;
+          }
+        }
+        
+        // Use deterministic hash value to break database seeding order clusters
+        score += getDeterministicScore(candidate.id) * 5;
+        
+        // Minor secondary tie-breaker to favor initial database sorting slightly
+        score -= i * 0.01;
+        
+        if (score > bestScore) {
+          bestScore = score;
+          bestIndex = i;
         }
       }
-      index++;
+      
+      if (bestIndex !== -1) {
+        interleaved.push(remaining[bestIndex]);
+        remaining.splice(bestIndex, 1);
+      } else {
+        break; // Safety break
+      }
     }
 
     return interleaved;
-  }, [productFuse, searchQuery, isSmartMode, selectedCategory, shops, filteredShops, validProducts]);
+  }, [productFuse, searchQuery, isSmartMode, selectedCategory, shops, filteredShops, validProducts, aiProductMatches]);
 
   // Count active offers (you can fetch this from offers table later)
   const activeOffers = 0; // Placeholder for now
@@ -672,7 +738,13 @@ const Index = () => {
           </div>
         ) : searchQuery.trim() ? (
           /* Search Results View */
-          <SearchResults shops={filteredShops} products={filteredProducts} searchQuery={searchQuery} />
+          <SearchResults 
+            shops={filteredShops} 
+            products={filteredProducts} 
+            searchQuery={searchQuery} 
+            isSmartMode={isSmartMode}
+            aiProductMatches={aiProductMatches}
+          />
         ) : (
           <div className="space-y-8">
             {selectedCategory === 'All' && (

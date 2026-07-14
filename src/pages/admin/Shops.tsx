@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Edit, Trash2, Store } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Store, Check } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const Shops = () => {
@@ -48,6 +48,22 @@ export const Shops = () => {
     }
   };
 
+  const verifyShop = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('shops')
+        .update({ verified: true })
+        .eq('id', id);
+
+      if (error) throw error;
+      toast.success('Shop verified successfully!');
+      setShops(shops.map((s) => s.id === id ? { ...s, verified: true } : s));
+    } catch (error) {
+      console.error('Error verifying shop:', error);
+      toast.error('Failed to verify shop');
+    }
+  };
+
   const filteredShops = shops.filter((shop) => 
     shop.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     shop.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -84,17 +100,18 @@ export const Shops = () => {
               <TableHead>Category</TableHead>
               <TableHead>City</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Verification</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-10">Loading...</TableCell>
+                <TableCell colSpan={7} className="text-center py-10">Loading...</TableCell>
               </TableRow>
             ) : filteredShops.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">No shops found</TableCell>
+                <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">No shops found</TableCell>
               </TableRow>
             ) : (
               filteredShops.map((shop) => (
@@ -120,7 +137,23 @@ export const Shops = () => {
                       {shop.open_now ? "Open" : "Closed"}
                     </Badge>
                   </TableCell>
+                  <TableCell>
+                    <Badge variant={shop.verified ? "success" : "warning"}>
+                      {shop.verified ? "Verified" : "Pending Approval"}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="text-right space-x-2">
+                    {!shop.verified && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        title="Verify Shop" 
+                        onClick={() => verifyShop(shop.id)}
+                        className="hover:bg-green-50"
+                      >
+                        <Check className="w-4.5 h-4.5 text-emerald-600 font-bold" />
+                      </Button>
+                    )}
                     <Link to={`/admin/shops/${shop.id}`}>
                       <Button variant="ghost" size="icon">
                         <Edit className="w-4 h-4 text-primary" />

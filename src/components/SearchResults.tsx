@@ -1,7 +1,7 @@
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Star, MapPin, Clock, Phone, Sparkles, Store, Package, Plus, Minus } from 'lucide-react';
+import { Star, MapPin, Clock, Phone, Sparkles, Store, Package, Plus, Minus, Tag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '@/contexts/CartContext';
 
@@ -29,9 +29,17 @@ interface SearchResultsProps {
   shops: Shop[];
   products?: any[];
   searchQuery: string;
+  isSmartMode?: boolean;
+  aiProductMatches?: Record<string, { score: number; reason: string }>;
 }
 
-export const SearchResults = ({ shops, products = [], searchQuery }: SearchResultsProps) => {
+export const SearchResults = ({ 
+  shops, 
+  products = [], 
+  searchQuery,
+  isSmartMode = false,
+  aiProductMatches = {}
+}: SearchResultsProps) => {
   const { cartItems, addToCart, updateQuantity } = useCart();
   const navigate = useNavigate();
 
@@ -54,6 +62,26 @@ export const SearchResults = ({ shops, products = [], searchQuery }: SearchResul
   const totalProductResults = products.length;
 
   const [activeTab, setActiveTab] = useState<'products' | 'shops'>('products');
+  const [showBudgetOnly, setShowBudgetOnly] = useState(false);
+
+  const getBudgetLimit = (category: string) => {
+    const cat = category?.toLowerCase() ?? '';
+    if (cat.includes('food') || cat.includes('restaurant')) return 200;
+    if (cat.includes('grocer')) return 100;
+    if (cat.includes('book') || cat.includes('stationer')) return 250;
+    if (cat.includes('cloth') || cat.includes('fashion') || cat.includes('apparel')) return 500;
+    if (cat.includes('electronic')) return 1000;
+    return 300; // default threshold
+  };
+
+  const isBudgetFriendly = (product: any) => {
+    const limit = getBudgetLimit(product.category);
+    return product.price <= limit;
+  };
+
+  const displayedProducts = showBudgetOnly 
+    ? products.filter(isBudgetFriendly)
+    : products;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -87,9 +115,28 @@ export const SearchResults = ({ shops, products = [], searchQuery }: SearchResul
       <div className="mt-6">
         {activeTab === 'products' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {totalProductResults > 0 ? (
+            {totalProductResults > 0 && (
+              <div className="flex justify-between items-center bg-card p-3 rounded-2xl border border-border">
+                <span className="text-sm font-medium text-muted-foreground">Filter Products</span>
+                <Button
+                  variant={showBudgetOnly ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowBudgetOnly(!showBudgetOnly)}
+                  className={`rounded-full transition-all flex items-center gap-1.5 ${
+                    showBudgetOnly 
+                      ? 'bg-green-600 hover:bg-green-700 text-white border-transparent shadow-glow' 
+                      : 'hover:text-green-600 hover:border-green-300'
+                  }`}
+                >
+                  <Tag className="w-4 h-4" />
+                  Budget Friendly Only
+                </Button>
+              </div>
+            )}
+
+            {displayedProducts.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                {products.map((product, index) => (
+                {displayedProducts.map((product, index) => (
                   <Card 
                     key={product.id} 
                     className="overflow-hidden group cursor-pointer animate-slide-up"
@@ -120,10 +167,23 @@ export const SearchResults = ({ shops, products = [], searchQuery }: SearchResul
                       )}
                       <div className="flex items-center justify-between mb-4">
                         <span className="text-lg font-bold text-primary">₹{product.price}</span>
-                        {product.featured && (
-                          <Badge variant="default">Featured</Badge>
-                        )}
+                        <div className="flex gap-1.5 items-center">
+                          {isBudgetFriendly(product) && (
+                            <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-200 font-semibold px-2 py-0.5">
+                              Budget Buy
+                            </Badge>
+                          )}
+                          {product.featured && (
+                            <Badge variant="default">Featured</Badge>
+                          )}
+                        </div>
                       </div>
+                      {isSmartMode && aiProductMatches[product.id] && (
+                        <div className="mt-2.5 mb-3 px-3 py-2 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-700 dark:text-purple-300 flex items-start gap-1.5 animate-fade-in" onClick={(e) => e.stopPropagation()}>
+                          <Sparkles className="w-3.5 h-3.5 mt-0.5 text-purple-500 flex-shrink-0" />
+                          <span>{aiProductMatches[product.id].reason}</span>
+                        </div>
+                      )}
                       <div className="grid grid-cols-2 gap-2">
                         {(() => {
                           const cartItem = cartItems.find(item => item.product_id === product.id);
@@ -174,6 +234,17 @@ export const SearchResults = ({ shops, products = [], searchQuery }: SearchResul
                     </div>
                   </Card>
                 ))}
+              </div>
+            ) : totalProductResults > 0 ? (
+              <div className="text-center py-12 border rounded-xl border-dashed bg-card p-6">
+                <Tag className="w-10 h-10 text-green-500 mx-auto mb-3 opacity-60 animate-pulse-soft" />
+                <h4 className="font-semibold text-lg mb-1">No Budget-Friendly Matches</h4>
+                <p className="text-sm text-muted-foreground mb-4 font-medium">
+                  All matches for "{searchQuery}" exceed the budget threshold for this category.
+                </p>
+                <Button variant="outline" onClick={() => setShowBudgetOnly(false)} className="rounded-full">
+                  Show All Products
+                </Button>
               </div>
             ) : (
               <div className="text-center py-12 border rounded-xl border-dashed">

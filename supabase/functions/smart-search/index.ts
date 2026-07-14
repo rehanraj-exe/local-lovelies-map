@@ -56,22 +56,37 @@ serve(async (req) => {
 
     if (shopsError) throw shopsError;
 
-    console.log(`Analyzing search query "${query}" against ${shops.length} shops...`);
+    // Fetch products data
+    const { data: products, error: productsError } = await supabase
+      .from('products')
+      .select('id, shop_id, name, description, price, category, in_stock')
+      .eq('in_stock', true);
 
-    const systemPrompt = `You are a local shop search semantic matching assistant.
-Your job is to match the user's search query against a database of local shops.
-The match should be semantic and understand context (e.g. searching 'clothing' matches boutique, 'hungry' or 'dinner' matches restaurants, 'hand-made' or 'gift' matches craft shop, 'fresh vegetables' matches grocers).
+    if (productsError) throw productsError;
 
-Given the user search query, analyze the provided list of shops and return a JSON object with:
-- matches: an array of matched shops, where each item has:
-  - id: the UUID of the shop
-  - score: a float score from 0.0 to 1.0 (relevance of the match)
-  - reason: a short 1-sentence explanation of why this shop is relevant to the query (e.g., "Authentic Indian cuisine ideal for dining out").
+    console.log(`Analyzing search query "${query}" against ${shops.length} shops and ${products?.length || 0} products...`);
+
+    const systemPrompt = `You are a local shop and product search semantic matching assistant.
+Your job is to match the user's natural language search query against a database of local shops and products.
+
+The user query can be natural language and include price filters (e.g. "under 1000", "less than 500", "below 200"), semantic categorizations, or specific necessities (e.g. "rain coat", "something sweet to eat", "running shoes").
+
+Analyze the provided list of shops and products and return a JSON object with two fields:
+1. matches: an array of matched shops, where each item has:
+   - id: the UUID of the shop
+   - score: a float score from 0.0 to 1.0 (relevance of the match)
+   - reason: a short 1-sentence explanation of why this shop is relevant to the query (e.g. "Offers a wide range of footwear suitable for daily use").
+2. matchedProducts: an array of matched products, where each item has:
+   - id: the UUID of the product
+   - score: a float score from 0.0 to 1.0 (relevance of the match)
+   - reason: a short 1-sentence explanation of why this product fits the criteria (e.g. "Nike sneakers priced at ₹899, which is under your ₹1000 budget").
 
 Rules:
-1. Only return shops that score 0.4 or higher.
-2. Sort the array of matches by score in descending order.
-3. Return ONLY strict JSON in the specified format without markdown blocks.`;
+1. Strict Price Parsing: If the query mentions a price limit (e.g., "under 1000" or "below 500"), you MUST exclude products whose price exceeds that limit, and prioritize products that meet the requirement.
+2. Semantic Necessity: Interpret terms like "rain protection" to match umbrellas or raincoats, or "sore throat" to match throat lozenges or honey tea.
+3. Score Threshold: Only return shops and products that score 0.4 or higher.
+4. Sorting: Sort both arrays by score in descending order.
+5. JSON Output: Return ONLY strict JSON in the specified format without markdown blocks.`;
 
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -83,7 +98,7 @@ Rules:
         model: apiModel,
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Search Query: "${query}"\n\nShops:\n${JSON.stringify(shops, null, 2)}` }
+          { role: 'user', content: `Search Query: "${query}"\n\nShops:\n${JSON.stringify(shops, null, 2)}\n\nProducts:\n${JSON.stringify(products, null, 2)}` }
         ],
         response_format: { type: "json_object" }
       }),
@@ -108,7 +123,7 @@ Rules:
   } catch (error) {
     console.error('Error in smart-search:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error', matches: [] }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error', matches: [], matchedProducts: [] }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
