@@ -459,12 +459,87 @@ const ShopProfile = () => {
             </div>
           </div>
 
+          {/* Products Section - ALWAYS VISIBLE ABOVE TABS */}
+          {products.length > 0 && (
+            <div className="mt-8">
+              <h3 className="text-2xl font-bold mb-4 px-2 border-l-4 border-primary">Shop Products</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {products.map((product, index) => (
+                  <Card key={product.id} id={`product-${product.id}`} className="overflow-hidden hover:shadow-glow transition-all animate-slide-up" style={{ animationDelay: `${index * 50}ms` }}>
+                    {product.image_url && (
+                      <div className="relative h-40 overflow-hidden">
+                        <img
+                          src={getProductImage(product.image_url, product.name)}
+                          alt={product.name}
+                          className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                        />
+                      </div>
+                    )}
+                    <div className="p-4">
+                      <h4 className="font-semibold mb-2">{product.name}</h4>
+                      {product.description && (
+                        <p className="text-sm text-muted-foreground mb-3">{product.description}</p>
+                      )}
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-lg font-bold text-primary">₹{product.price}</span>
+                        {product.featured && (
+                          <Badge variant="default">Featured</Badge>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {(() => {
+                          const cartItem = cartItems.find(item => item.product_id === product.id);
+                          const quantity = cartItem ? cartItem.quantity : 0;
+                          
+                          return quantity > 0 ? (
+                            <div className="flex items-center justify-between border rounded-md px-2" onClick={(e) => e.stopPropagation()}>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-6 w-6"
+                                onClick={() => updateQuantity(product.id, quantity - 1, true)}
+                              >
+                                <Minus className="h-3 w-3" />
+                              </Button>
+                              <span className="font-semibold text-sm">{quantity}</span>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-6 w-6"
+                                onClick={() => updateQuantity(product.id, quantity + 1, true)}
+                              >
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button 
+                              variant="outline"
+                              className="w-full" 
+                              onClick={() => addToCart({ ...product, shop })}
+                              disabled={!product.in_stock}
+                            >
+                              {product.in_stock ? 'Add to Cart' : 'Out of Stock'}
+                            </Button>
+                          );
+                        })()}
+                        <Button 
+                          className="w-full" 
+                          onClick={() => handleBuyNow(product)}
+                          disabled={!product.in_stock}
+                        >
+                          Buy Now
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Tabs */}
-          <Tabs defaultValue="products" className="mt-6">
+          <Tabs defaultValue="offers" className="mt-8">
             <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent overflow-x-auto flex-nowrap">
-              <TabsTrigger value="products" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary whitespace-nowrap">
-                Products
-              </TabsTrigger>
               <TabsTrigger value="offers" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary whitespace-nowrap">
                 Offers
               </TabsTrigger>
@@ -518,91 +593,6 @@ const ShopProfile = () => {
                 <div className="text-center py-12">
                   <p className="text-muted-foreground">No active offers at the moment</p>
                   <p className="text-sm text-muted-foreground mt-2">Check back soon for great deals!</p>
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="products" className="mt-6">
-              {/* Products Section */}
-              {products.length > 0 ? (
-                <div className="mt-8 pt-8 border-t border-border">
-                  <h3 className="text-xl font-bold mb-4">Popular Products</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {products.map((product, index) => (
-                      <Card key={product.id} className="overflow-hidden hover:shadow-glow transition-all animate-slide-up" style={{ animationDelay: `${index * 50}ms` }}>
-                        {product.image_url && (
-                          <div className="relative h-40 overflow-hidden">
-                            <img
-                              src={getProductImage(product.image_url, product.name)}
-                              alt={product.name}
-                              className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
-                            />
-                          </div>
-                        )}
-                        <div className="p-4">
-                          <h4 className="font-semibold mb-2">{product.name}</h4>
-                          {product.description && (
-                            <p className="text-sm text-muted-foreground mb-3">{product.description}</p>
-                          )}
-                          <div className="flex items-center justify-between mb-3">
-                            <span className="text-lg font-bold text-primary">₹{product.price}</span>
-                            {product.featured && (
-                              <Badge variant="default">Featured</Badge>
-                            )}
-                          </div>
-                          <div className="grid grid-cols-2 gap-2">
-                            {(() => {
-                              const cartItem = cartItems.find(item => item.product_id === product.id);
-                              const quantity = cartItem ? cartItem.quantity : 0;
-                              
-                              return quantity > 0 ? (
-                                <div className="flex items-center justify-between border rounded-md px-2" onClick={(e) => e.stopPropagation()}>
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="h-6 w-6"
-                                    onClick={() => updateQuantity(product.id, quantity - 1, true)}
-                                  >
-                                    <Minus className="h-3 w-3" />
-                                  </Button>
-                                  <span className="font-semibold text-sm">{quantity}</span>
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="h-6 w-6"
-                                    onClick={() => updateQuantity(product.id, quantity + 1, true)}
-                                  >
-                                    <Plus className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              ) : (
-                                <Button 
-                                  variant="outline"
-                                  className="w-full" 
-                                  onClick={() => addToCart({ ...product, shop })}
-                                  disabled={!product.in_stock}
-                                >
-                                  {product.in_stock ? 'Add to Cart' : 'Out of Stock'}
-                                </Button>
-                              );
-                            })()}
-                            <Button 
-                              className="w-full" 
-                              onClick={() => handleBuyNow(product)}
-                              disabled={!product.in_stock}
-                            >
-                              Buy Now
-                            </Button>
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="mt-8 pt-8 border-t border-border text-center py-12">
-                  <h3 className="text-xl font-bold mb-4">Products</h3>
-                  <p className="text-muted-foreground">No products available at the moment</p>
                 </div>
               )}
             </TabsContent>
