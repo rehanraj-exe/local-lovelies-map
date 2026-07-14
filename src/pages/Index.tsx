@@ -205,8 +205,8 @@ const Index = () => {
   // Configure fuzzy search for products
   const productFuse = useMemo(() => {
     return new Fuse(validProducts, {
-      keys: ['name', 'description'],
-      threshold: 0.4,
+      keys: ['name', 'description', 'category'],
+      threshold: 0.3,
       includeScore: true,
     });
   }, [validProducts]);
@@ -262,8 +262,29 @@ const Index = () => {
   const filteredProducts = useMemo(() => {
     if (!searchQuery.trim() || isSmartMode) return [];
     const fuseResults = productFuse.search(searchQuery);
-    return fuseResults.map(result => result.item);
-  }, [productFuse, searchQuery, isSmartMode]);
+    let results = fuseResults.map(result => result.item);
+
+    // Filter products by selected category if one is chosen
+    if (selectedCategory !== 'All') {
+      results = results.filter(product => {
+        const shop = shops.find(s => s.id === product.shop_id);
+        return shop?.category === selectedCategory;
+      });
+    }
+
+    // Also filter to only show products from shops that matched the search,
+    // so we don't show random fuzzy-matched products from unrelated shops
+    const matchedShopIds = new Set(filteredShops.map(s => s.id));
+    if (matchedShopIds.size > 0) {
+      const shopFilteredResults = results.filter(p => matchedShopIds.has(p.shop_id));
+      // Only apply shop filter if it doesn't eliminate everything
+      if (shopFilteredResults.length > 0) {
+        results = shopFilteredResults;
+      }
+    }
+
+    return results;
+  }, [productFuse, searchQuery, isSmartMode, selectedCategory, shops, filteredShops]);
 
   // Count active offers (you can fetch this from offers table later)
   const activeOffers = 0; // Placeholder for now
